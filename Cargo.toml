@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["Ryan Goldstein <ryan@ryanisaacg.com>"]
 edition = "2018"
 
+[features]
+stdweb = ["winit/stdweb"]
+web-sys = ["winit/web-sys"]
+
 [dependencies.futures-core-preview]
 version = "0.3.0-alpha.17"
 default-features = false

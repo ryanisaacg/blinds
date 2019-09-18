@@ -7,9 +7,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
         rust: [stable, nightly]
-        include:
-          - os: macOS-latest
-            web: true
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -18,27 +15,10 @@ jobs:
       run: |
         rustup component add clippy
         rustup component add rustfmt
-    - name: Install the web target
-      if: matrix.web == true
-      run: rustup target add wasm32-unknown-unknown
-    # Checking stdweb
-    - uses: actions/checkout@master
-    - name: Check stdweb
-      if: matrix.web == true
-      run: |
-        cargo check --target wasm32-unknown-unknown --features stdweb
-        cargo clippy --target wasm32-unknown-unknown --features stdweb
-    # Checking web-sys
-    - name: Check web-sys
-      if: matrix.web == true
-      run: |
-        cargo check --target wasm32-unknown-unknown --features web-sys
-        cargo clippy --target wasm32-unknown-unknown --features web-sys
     # Checking normal
     - name: Run tests
-      if: matrix.target == ''
       run: |
-        cargo check
+        cargo test
         cargo clippy
     # Checking fmt
     - name: Rustfmt
