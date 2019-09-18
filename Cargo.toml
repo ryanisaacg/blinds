@@ -1,0 +1,26 @@
+[package]
+name = "quick-lifecycle"
+version = "0.1.0"
+authors = ["Ryan Goldstein <ryan@ryanisaacg.com>"]
+edition = "2018"
+
+[dependencies.futures-core-preview]
+version = "0.3.0-alpha.17"
+default-features = false
+
+[dependencies.futures-util-preview]
+version = "0.3.0-alpha.17"
+default-features = false
+
+[dependencies.futures-executor-preview]
+version = "0.3.0-alpha.17"
+default-features = false
+features = ["std"]
+
+[dependencies.winit]
+git = "https://github.com/rust-windowing/winit"
+branch = "web"
+
+[dependencies.gilrs]
+version = "0.7"
+optional = true
