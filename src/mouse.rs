@@ -2,6 +2,8 @@ use crate::Event;
 use winit::dpi::LogicalPosition;
 use winit::event::{ElementState, MouseButton, WindowEvent};
 
+// TODO: does this account for DPI?
+
 #[derive(Clone, Debug, PartialEq)]
 /// A simple mouse cursor abstraction
 pub struct Mouse {
