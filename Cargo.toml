@@ -5,26 +5,22 @@ authors = ["Ryan Goldstein <ryan@ryanisaacg.com>"]
 edition = "2018"
 
 [features]
-stdweb = ["winit/stdweb"]
-web-sys = ["winit/web-sys"]
+default = ["gamepad"]
 
-[dependencies.futures-core-preview]
-version = "0.3.0-alpha.17"
-default-features = false
+gamepad = ["gilrs"]
+gl = ["glow", "glutin"]
+stdweb = ["winit/stdweb", "glow/stdweb"]
+web-sys = ["winit/web-sys", "glow/web-sys"]
 
-[dependencies.futures-util-preview]
-version = "0.3.0-alpha.17"
-default-features = false
+[dependencies]
+futures-core-preview = { version = "0.3.0-alpha.17", default-features = false }
+futures-util-preview = { version = "0.3.0-alpha.17", default-features = false }
+futures-executor-preview = { version = "0.3.0-alpha.17", default-features = false, features = ["std"] }
+glow = { version = "0.3.0-alpha3", optional = true }
+glutin = { version = "0.22.0-alpha3", optional = true }
+gilrs = { version = "0.7", optional = true }
+mint = "0.5"
+winit = { git = "https://github.com/rust-windowing/winit", branch = "web" }
 
-[dependencies.futures-executor-preview]
-version = "0.3.0-alpha.17"
-default-features = false
-features = ["std"]
-
-[dependencies.winit]
-git = "https://github.com/rust-windowing/winit"
-branch = "web"
-
-[dependencies.gilrs]
-version = "0.7"
-optional = true
+[patch.crates-io]
+winit = { git = "https://github.com/rust-windowing/winit", branch = "web" }
