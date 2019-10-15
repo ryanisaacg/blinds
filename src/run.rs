@@ -1,65 +1,50 @@
 use crate::event::*;
-use crate::{EventStream, Window, WindowBuilder};
+use crate::{EventStream, Window, Settings};
 use futures_util::task::LocalSpawnExt;
 use futures_executor::LocalPool;
 use mint::Vector2;
 use std::future::Future;
-use winit::event::Event as WinitEvent;
-use winit::event_loop::EventLoop;
+use winit::event::{Event as WinitEvent};
+use winit::event_loop::{ControlFlow, EventLoop};
 
 // TODO: add gilrs events
 // TODO: add timing handling
 // TODO: provide custom windowbuilder
 
 
-pub struct Runtime {
-    stream: EventStream,
-}
+pub fn run<F, T>(settings: Settings, app: F) -> !
+        where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, EventStream) -> T {
+    let stream = EventStream::new();
+    let buffer = stream.buffer();
 
-impl Runtime {
-    pub fn new() -> Runtime {
-        Runtime {
-            stream: EventStream::new(),
-        }
-    }
+    let event_loop = EventLoop::new::<>();
+    let window = Window::new(&event_loop, settings);
+    let mut pool = LocalPool::new();
+    let mut spawner = pool.spawner();
+    spawner.spawn_local(app(window, stream)).expect("Failed to start application");
 
-    pub fn init(self, wb: WindowBuilder) -> (Window, EventStream) {
-        (Window::new(wb), self.stream)
-    }
-
-    pub fn run<F, T>(app: F) -> !
-            where T: 'static + Future<Output = ()>, F: FnOnce(Runtime) -> T {
-        let runtime = Runtime::new();
-        let buffer = runtime.stream.buffer();
-
-
-        let mut pool = LocalPool::new();
-        let mut spawner = pool.spawner();
-        spawner.spawn_local(app(runtime)).expect("Failed to start application");
-
-        let event_loop = EventLoop::new::<>();
-
-        event_loop.run(move |event, _, _| {
-            match event {
-                WinitEvent::WindowEvent { event, .. } => {
-                    // TODO: convert Winit event to quick-lifecycle event
-                    //buffer.borrow_mut().push(Event::Input(event));
-                    if let Some(event) = convert(event) {
-                        buffer.borrow_mut().push(event);
-                    }
+    event_loop.run(move |event, _, ctrl| {
+        match event {
+            WinitEvent::WindowEvent { event, .. } => {
+                if let winit::event::WindowEvent::CloseRequested = &event {
+                    *ctrl = ControlFlow::Exit;
                 }
-                WinitEvent::LoopDestroyed => {
-                    buffer.borrow_mut().push(Event::Close);
-                    pool.run_until_stalled();
+                if let Some(event) = convert(event) {
+                    buffer.borrow_mut().push(event);
                 }
-                WinitEvent::EventsCleared => {
-                    buffer.borrow_mut().push(Event::Update);
-                    pool.run_until_stalled();
-                }
-                _ => ()
             }
-        })
-    }
+            WinitEvent::LoopDestroyed => {
+                println!("Loop destroyed");
+                buffer.borrow_mut().push(Event::Close);
+                pool.run_until_stalled();
+            }
+            WinitEvent::EventsCleared => {
+                buffer.borrow_mut().push(Event::Update);
+                pool.run_until_stalled();
+            }
+            _ => ()
+        }
+    })
 }
 
 fn convert(event: winit::event::WindowEvent) -> Option<Event> {
@@ -104,7 +89,6 @@ fn convert(event: winit::event::WindowEvent) -> Option<Event> {
                 modifiers: modifiers.into(),
             }
         ),
-        Destroyed => Event::Close,
         _ => return None
     })
 }

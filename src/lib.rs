@@ -1,12 +1,12 @@
 mod event;
 mod event_stream;
-mod runtime;
+mod run;
 mod window;
 
 pub use self::event::*;
 pub use self::event_stream::EventStream;
-pub use self::runtime::Runtime;
-pub use self::window::{Window, WindowBuilder};
+pub use self::run::run;
+pub use self::window::{Window, Settings};
 
 pub mod traits {
     pub use futures_util::stream::StreamExt;
