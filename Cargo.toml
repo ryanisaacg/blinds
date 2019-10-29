@@ -20,7 +20,5 @@ glow = { version = "0.3.0-alpha3", optional = true }
 glutin = { version = "0.22.0-alpha3", optional = true }
 gilrs = { version = "0.7", optional = true }
 mint = "0.5"
-winit = { git = "https://github.com/rust-windowing/winit", branch = "web" }
+winit = "0.20.0-alpha4"
 
-[patch.crates-io]
-winit = { git = "https://github.com/rust-windowing/winit", branch = "web" }
