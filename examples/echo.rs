@@ -1,13 +1,15 @@
 #![feature(async_closure)]
 
-use quick_lifecycle::traits::*;
-use quick_lifecycle::{EventStream, Window, Settings, run};
+use blinds::traits::*;
+use blinds::{Settings, run};
 
 
 fn main() {
-    run(Settings::default(), async move |window, mut events| {
-        while let Some(event) = events.next().await {
-            //println!("{:?}", event);
+    run(Settings::default(), async move |_window, mut events| {
+        while let Some(frame) = events.next().await {
+            for event in frame {
+                println!("{:?}", event);
+            }
         }
     });
 }
