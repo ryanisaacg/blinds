@@ -6,21 +6,8 @@ use winit::event::{DeviceId, MouseScrollDelta as MSD, VirtualKeyCode};
 
 #[derive(Debug)]
 pub enum Event {
-    Close,
-    Update,
-    Draw,
-    Window(WindowEvent),
-    Input(InputEvent),
-}
-
-#[derive(Debug)]
-pub enum WindowEvent {
     Resized(Vector2<f32>),
     Focused(bool),
-}
-
-#[derive(Debug)]
-pub enum InputEvent {
     ReceivedCharacter(char),
     KeyboardInput {
         key: Key,

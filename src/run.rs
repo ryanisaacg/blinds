@@ -33,13 +33,7 @@ pub fn run<F, T>(settings: Settings, app: F) -> !
                     buffer.borrow_mut().push(event);
                 }
             }
-            WinitEvent::LoopDestroyed => {
-                println!("Loop destroyed");
-                buffer.borrow_mut().push(Event::Close);
-                pool.run_until_stalled();
-            }
-            WinitEvent::EventsCleared => {
-                buffer.borrow_mut().push(Event::Update);
+            WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
                 pool.run_until_stalled();
             }
             _ => ()
@@ -50,45 +44,38 @@ pub fn run<F, T>(settings: Settings, app: F) -> !
 fn convert(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
-        RedrawRequested => Event::Draw,
-        Resized(ls) => Event::Window(WindowEvent::Resized(ls_to_vec(ls))),
-        ReceivedCharacter(c) => Event::Input(InputEvent::ReceivedCharacter(c)),
-        Focused(f) => Event::Window(WindowEvent::Focused(f)),
+        Resized(ls) => Event::Resized(ls_to_vec(ls)),
+        ReceivedCharacter(c) => Event::ReceivedCharacter(c),
+        Focused(f) => Event::Focused(f),
         KeyboardInput { input: winit::event::KeyboardInput {
             state, virtual_keycode: Some(key), modifiers, ..
-        }, .. } => Event::Input(InputEvent::KeyboardInput {
+        }, .. } => Event::KeyboardInput {
             key: key.into(),
             modifiers: modifiers.into(),
             state: state.into(),
-        }),
-        CursorMoved { device_id, position, modifiers } => Event::Input(
-            InputEvent::MouseMoved {
-                pointer: Pointer(device_id),
-                position: lp_to_vec(position),
-                modifiers: modifiers.into(),
-            }
-        ),
-        CursorEntered { device_id } => Event::Input(InputEvent::MouseEntered {
+        },
+        CursorMoved { device_id, position, modifiers } => Event::MouseMoved {
             pointer: Pointer(device_id),
-        }),
-        CursorLeft { device_id } => Event::Input(InputEvent::MouseLeft {
+            position: lp_to_vec(position),
+            modifiers: modifiers.into(),
+        },
+        CursorEntered { device_id } => Event::MouseEntered {
             pointer: Pointer(device_id),
-        }),
-        MouseWheel { device_id, delta, modifiers, .. } => Event::Input(
-            InputEvent::MouseWheel {
-                pointer: Pointer(device_id),
-                delta: delta.into(),
-                modifiers: modifiers.into()
-            }
-        ),
-        MouseInput { device_id, button, state, modifiers, ..} => Event::Input(
-            InputEvent::MouseInput {
-                pointer: Pointer(device_id),
-                state: state.into(),
-                button: button.into(),
-                modifiers: modifiers.into(),
-            }
-        ),
+        },
+        CursorLeft { device_id } => Event::MouseLeft {
+            pointer: Pointer(device_id),
+        },
+        MouseWheel { device_id, delta, modifiers, .. } => Event::MouseWheel {
+            pointer: Pointer(device_id),
+            delta: delta.into(),
+            modifiers: modifiers.into()
+        },
+        MouseInput { device_id, button, state, modifiers, ..} => Event::MouseInput {
+            pointer: Pointer(device_id),
+            state: state.into(),
+            button: button.into(),
+            modifiers: modifiers.into(),
+        },
         _ => return None
     })
 }
