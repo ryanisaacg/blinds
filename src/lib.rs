@@ -6,7 +6,7 @@ mod window;
 pub use self::event::*;
 pub use self::event_stream::EventStream;
 pub use self::run::run;
-pub use self::window::{Window, Settings};
+pub use self::window::{CursorIcon, Window, Settings};
 
 pub mod traits {
     pub use futures_util::stream::StreamExt;
