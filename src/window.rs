@@ -1,13 +1,14 @@
 #[cfg(feature = "gl")]
 use glow::Context;
-#[cfg(feature = "gl")]
-use glutin::{WindowContext};
+#[cfg(all(feature="gl", not(target_arch = "wasm32")))]
+use glutin::{PossiblyCurrent, WindowedContext};
 use mint::Vector2;
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
 use winit::window::{Fullscreen, Window as WinitWindow, WindowBuilder};
 
+// TODO: support webgl1
 pub struct Settings {
     /// The size of the window
     pub size: Vector2<f32>,
@@ -23,6 +24,10 @@ pub struct Settings {
     ///
     /// Does nothing on web currently
     pub multisampling: Option<u16>,
+    /// Enable or disable vertical sync
+    ///
+    /// Does nothing on web
+    pub vsync: bool,
     /// If the window can be resized by the user
     ///
     /// Does nothing on web
@@ -39,6 +44,7 @@ impl Default for Settings {
             fullscreen: false,
             icon_path: None,
             multisampling: None,
+            vsync: false,
             resizable: false,
             title: "",
         }
@@ -46,11 +52,11 @@ impl Default for Settings {
 }
 
 pub struct Window {
-    #[cfg(not(feature="gl"))]
+    #[cfg(any(not(feature="gl"), target_arch = "wasm32"))]
     window: WinitWindow,
-    #[cfg(feature="gl")]
+    #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
     window: WindowedContext<PossiblyCurrent>,
-    #[cfg(feature="gl")]
+    #[cfg(feature = "gl")]
     ctx: Context,
 }
 
@@ -61,6 +67,33 @@ fn fullscreen_convert(fullscreen: bool, monitor: MonitorHandle) -> Option<Fullsc
         None
     }
 }
+
+#[cfg(all(feature = "stdweb", target_arch = "wasm32"))]
+fn insert_canvas(window: &WinitWindow) -> std_web::web::html_element::CanvasElement {
+    use winit::platform::web::WindowExtStdweb;
+    use std_web::web::document;
+    use std_web::traits::*;
+
+    let canvas = window.canvas();
+    document().body().expect("TODO").append_child(&canvas);
+
+    canvas
+}
+
+#[cfg(all(feature = "web-sys", target_arch = "wasm32"))]
+fn insert_canvas(window: &WinitWindow) -> web_sys::HtmlCanvasElement {
+    use winit::platform::web::WindowExtWebSys;
+    let canvas = window.canvas();
+    let window = web_sys::window().expect("Failed to obtain window");
+    let document = window.document().expect("Failed to obtain document");
+
+    document.body().expect("Document has no body node").append_child(&canvas).expect("Failed to insert canvas");
+
+    canvas
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn insert_canvas(_window: &WinitWindow) {}
 
 impl Window {
     pub(crate) fn new(eventloop: &EventLoop<()>, settings: Settings) -> Window {
@@ -73,25 +106,59 @@ impl Window {
             .with_fullscreen(fullscreen_convert(settings.fullscreen, eventloop.primary_monitor()))
             .with_title(settings.title);
         // TODO: respect window icons
-        // TODO: insert the canvas
         #[cfg(not(feature="gl"))] let window = {
-            let window = wb
-                .build(eventloop)
-                .expect("TODO");
+            let window = wb.build(eventloop).expect("TODO");
+            insert_canvas(&window);
             Window {
                 window,
             }
         };
-        #[cfg(feature="gl")] let window = {
-            // TODO: initialize glow
-            let window = WindowBuilder::new()
-                .build(eventloop)
-                .expect("TODO");
+        #[cfg(all(feature="gl", target_arch = "wasm32"))] let window = {
+            let window = wb.build(eventloop).expect("TODO");
+            let canvas = insert_canvas(&window);
+            // TODO the unwraps
+            #[cfg(feature = "stdweb")]
+            use webgl_stdweb::WebGL2RenderingContext;
+            #[cfg(feature = "stdweb")]
+            let webgl2_context: WebGL2RenderingContext = canvas
+                .get_context()
+                .unwrap();
+            #[cfg(feature = "web-sys")]
+            use wasm_bindgen::JsCast;
+            #[cfg(feature = "web-sys")]
+            let webgl2_context = canvas
+                .get_context("webgl2")
+                .unwrap()
+                .unwrap()
+                .dyn_into::<web_sys::WebGl2RenderingContext>()
+                .unwrap();
+            let ctx = glow::Context::from_webgl2_context(webgl2_context);
             Window {
+                ctx,
+                window,
+            }
+        };
+        #[cfg(all(feature="gl", not(target_arch = "wasm32")))] let window = {
+            let mut cb = glutin::ContextBuilder::new()
+                .with_vsync(settings.vsync);
+            if let Some(msaa) = settings.multisampling {
+                cb = cb.with_multisampling(msaa);
+            }
+            let window = cb.build_windowed(wb, eventloop)
+                .expect("TODO");
+            let window = unsafe { window.make_current().unwrap() };
+            let ctx = glow::Context::from_loader_function(|s| {
+                window.get_proc_address(s) as *const _
+            });
+            insert_canvas(window.window());
+            Window {
+                ctx,
                 window,
             }
         };
         window.set_cursor_icon(settings.cursor_icon);
+
+        // TODO: insert the canvas
 
         window
     }
@@ -143,10 +210,10 @@ impl Window {
 
     #[inline]
     fn window(&self) -> &WinitWindow {
-        #[cfg(not(feature="gl"))]
+        #[cfg(any(not(feature="gl"), target_arch = "wasm32"))]
         return &self.window;
-        #[cfg(feature="gl")]
-        return window.window();
+        #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
+        return self.window.window();
     }
 }
 
@@ -190,6 +257,7 @@ pub enum CursorIcon {
 
 impl Into<winit::window::CursorIcon> for CursorIcon {
     fn into(self) -> winit::window::CursorIcon {
+        use CursorIcon::*;
         match self {
             Default => winit::window::CursorIcon::Default,
             Crosshair => winit::window::CursorIcon::Crosshair,
