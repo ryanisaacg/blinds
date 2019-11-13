@@ -5,8 +5,11 @@ mod window;
 
 pub use self::event::*;
 pub use self::event_stream::EventStream;
-pub use self::run::{run, run_gl};
+pub use self::run::run;
 pub use self::window::{CursorIcon, Window, Settings};
+
+#[cfg(feature = "gl")]
+pub use self::run::run_gl;
 
 pub(crate) use self::event_stream::EventBuffer;
 
