@@ -2,8 +2,6 @@ use mint::Vector2;
 use winit::dpi::LogicalPosition;
 use winit::event::{DeviceId, MouseScrollDelta as MSD, VirtualKeyCode};
 
-// TODO: gamepad events
-
 #[derive(Debug)]
 pub enum Event {
     Resized(Vector2<f32>),

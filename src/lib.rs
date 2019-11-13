@@ -5,9 +5,11 @@ mod window;
 
 // TODO: add gilrs events
 // TODO: add timing handling
-// TODO: provide custom windowbuilder
-// TODO: close requests or just let the future finish
-// TODO: give the graphics context access to the windowedcontext objects
+// TODO: support webgl1
+// TODO: respect window icons
+// TODO: auto-present the window on desktop
+// TODO: resize the context
+// TODO: error handling
 
 pub use self::event::*;
 pub use self::event_stream::EventStream;

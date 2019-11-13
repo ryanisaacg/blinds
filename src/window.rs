@@ -8,7 +8,6 @@ use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
 use winit::window::{Fullscreen, Window as WinitWindow, WindowBuilder};
 
-// TODO: support webgl1
 pub struct Settings {
     /// The size of the window
     pub size: Vector2<f32>,
@@ -73,7 +72,7 @@ fn insert_canvas(window: &WinitWindow) -> std_web::web::html_element::CanvasElem
     use std_web::traits::*;
 
     let canvas = window.canvas();
-    document().body().expect("TODO").append_child(&canvas);
+    document().body().expect("Document has no body node").append_child(&canvas);
 
     canvas
 }
@@ -107,7 +106,6 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
 impl Window {
     pub(crate) fn new(el: &EventLoop<()>, settings: Settings) -> Window {
         let wb = settings_to_wb(el, &settings);
-        // TODO: respect window icons
         #[cfg(any(not(feature="gl"), target_arch = "wasm32"))] let window = {
             let window = wb.build(el).expect("TODO");
             insert_canvas(&window);
@@ -128,8 +126,6 @@ impl Window {
             }
         };
         window.set_cursor_icon(settings.cursor_icon);
-
-        // TODO: insert the canvas
 
         window
     }
@@ -208,7 +204,6 @@ impl Window {
 
     #[cfg(feature="gl")]
     pub fn present(&self) {
-        // TODO
     }
 
     #[inline]
