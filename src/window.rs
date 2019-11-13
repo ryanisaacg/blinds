@@ -137,10 +137,10 @@ impl Window {
         #[cfg(target_arch = "wasm32")] let ctx = {
             #[cfg(feature = "stdweb")] let ctx = {
                 use winit::platform::web::WindowExtStdweb;
-                use webgl_stdweb::WebGL2RenderingContext;
+                use webgl_stdweb::WebGLRenderingContext;
 
                 window.window.canvas()
-                    .get_context::<WebGL2RenderingContext>()
+                    .get_context::<WebGLRenderingContext>()
                     .unwrap()
             };
             #[cfg(feature = "web-sys")] let ctx = {
@@ -148,14 +148,14 @@ impl Window {
                 use wasm_bindgen::JsCast;
 
                 window.window.canvas()
-                    .get_context("webgl2")
+                    .get_context("webgl")
                     .unwrap()
                     .unwrap()
-                    .dyn_into::<web_sys::WebGl2RenderingContext>()
+                    .dyn_into::<web_sys::WebGlRenderingContext>()
                     .unwrap()
             };
 
-            glow::Context::from_webgl2_context(ctx)
+            glow::Context::from_webgl1_context(ctx)
         };
         #[cfg(not(target_arch = "wasm32"))]
         let ctx = {

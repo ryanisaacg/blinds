@@ -4,8 +4,6 @@ mod run;
 mod window;
 
 // TODO: add gilrs events
-// TODO: add timing handling
-// TODO: support webgl1
 // TODO: respect window icons
 // TODO: auto-present the window on desktop
 // TODO: resize the context
