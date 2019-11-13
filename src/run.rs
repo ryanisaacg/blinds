@@ -9,11 +9,6 @@ use std::future::Future;
 use winit::event::{Event as WinitEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
 
-// TODO: add gilrs events
-// TODO: add timing handling
-// TODO: provide custom windowbuilder
-
-
 pub fn run<F, T>(settings: Settings, app: F) -> !
         where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, EventStream) -> T {
     let stream = EventStream::new();
@@ -56,7 +51,9 @@ fn do_run(event_loop: EventLoop<()>, mut pool: LocalPool, buffer: Arc<RefCell<Ev
                 }
             }
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
-                pool.run_until_stalled();
+                if pool.try_run_one() {
+                    *ctrl = ControlFlow::Exit;
+                }
             }
             _ => ()
         }
