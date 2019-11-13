@@ -52,12 +52,10 @@ impl Default for Settings {
 }
 
 pub struct Window {
-    #[cfg(any(not(feature="gl"), target_arch = "wasm32"))]
+    #[cfg(any(target_arch = "wasm32", not(feature="gl")))]
     window: WinitWindow,
-    #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
+    #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
     window: WindowedContext<PossiblyCurrent>,
-    #[cfg(feature = "gl")]
-    ctx: Context,
 }
 
 fn fullscreen_convert(fullscreen: bool, monitor: MonitorHandle) -> Option<Fullscreen> {
@@ -92,49 +90,28 @@ fn insert_canvas(window: &WinitWindow) -> web_sys::HtmlCanvasElement {
     canvas
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(any(not(feature="gl"), target = "wasm32-unknown-unknown"))]
 fn insert_canvas(_window: &WinitWindow) {}
 
+fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
+    WindowBuilder::new()
+        .with_inner_size(LogicalSize {
+            width: settings.size.x as f64,
+            height: settings.size.y as f64
+        })
+        .with_resizable(settings.resizable)
+        .with_fullscreen(fullscreen_convert(settings.fullscreen, el.primary_monitor()))
+        .with_title(settings.title)
+}
+
 impl Window {
-    pub(crate) fn new(eventloop: &EventLoop<()>, settings: Settings) -> Window {
-        let wb = WindowBuilder::new()
-            .with_inner_size(LogicalSize {
-                width: settings.size.x as f64,
-                height: settings.size.y as f64
-            })
-            .with_resizable(settings.resizable)
-            .with_fullscreen(fullscreen_convert(settings.fullscreen, eventloop.primary_monitor()))
-            .with_title(settings.title);
+    pub(crate) fn new(el: &EventLoop<()>, settings: Settings) -> Window {
+        let wb = settings_to_wb(el, &settings);
         // TODO: respect window icons
-        #[cfg(not(feature="gl"))] let window = {
-            let window = wb.build(eventloop).expect("TODO");
+        #[cfg(any(not(feature="gl"), target_arch = "wasm32"))] let window = {
+            let window = wb.build(el).expect("TODO");
             insert_canvas(&window);
             Window {
-                window,
-            }
-        };
-        #[cfg(all(feature="gl", target_arch = "wasm32"))] let window = {
-            let window = wb.build(eventloop).expect("TODO");
-            let canvas = insert_canvas(&window);
-            // TODO the unwraps
-            #[cfg(feature = "stdweb")]
-            use webgl_stdweb::WebGL2RenderingContext;
-            #[cfg(feature = "stdweb")]
-            let webgl2_context: WebGL2RenderingContext = canvas
-                .get_context()
-                .unwrap();
-            #[cfg(feature = "web-sys")]
-            use wasm_bindgen::JsCast;
-            #[cfg(feature = "web-sys")]
-            let webgl2_context = canvas
-                .get_context("webgl2")
-                .unwrap()
-                .unwrap()
-                .dyn_into::<web_sys::WebGl2RenderingContext>()
-                .unwrap();
-            let ctx = glow::Context::from_webgl2_context(webgl2_context);
-            Window {
-                ctx,
                 window,
             }
         };
@@ -144,15 +121,9 @@ impl Window {
             if let Some(msaa) = settings.multisampling {
                 cb = cb.with_multisampling(msaa);
             }
-            let window = cb.build_windowed(wb, eventloop)
-                .expect("TODO");
+            let window = cb.build_windowed(wb, el).expect("TODO");
             let window = unsafe { window.make_current().unwrap() };
-            let ctx = glow::Context::from_loader_function(|s| {
-                window.get_proc_address(s) as *const _
-            });
-            insert_canvas(window.window());
             Window {
-                ctx,
                 window,
             }
         };
@@ -161,6 +132,43 @@ impl Window {
         // TODO: insert the canvas
 
         window
+    }
+
+    #[cfg(feature="gl")]
+    pub(crate) fn new_gl(el: &EventLoop<()>, settings: Settings) -> (Window, Context) {
+        let window = Window::new(el, settings);
+
+        #[cfg(target_arch = "wasm32")] let ctx = {
+            #[cfg(feature = "stdweb")] let ctx = {
+                use winit::platform::web::WindowExtStdweb;
+                use webgl_stdweb::WebGL2RenderingContext;
+
+                window.window.canvas()
+                    .get_context::<WebGL2RenderingContext>()
+                    .unwrap()
+            };
+            #[cfg(feature = "web-sys")] let ctx = {
+                use winit::platform::web::WindowExtWebSys;
+                use wasm_bindgen::JsCast;
+
+                window.window.canvas()
+                    .get_context("webgl2")
+                    .unwrap()
+                    .unwrap()
+                    .dyn_into::<web_sys::WebGl2RenderingContext>()
+                    .unwrap()
+            };
+
+            glow::Context::from_webgl2_context(ctx)
+        };
+        #[cfg(not(target_arch = "wasm32"))]
+        let ctx = {
+            glow::Context::from_loader_function(|s| {
+                window.window.get_proc_address(s) as *const _
+            })
+        };
+
+        (window, ctx)
     }
 
     pub fn set_cursor_icon(&self, icon: Option<CursorIcon>) {
@@ -200,12 +208,7 @@ impl Window {
 
     #[cfg(feature="gl")]
     pub fn present(&self) {
-
-    }
-
-    #[cfg(feature="gl")]
-    pub fn ctx(&mut self) -> &mut Context {
-        &mut self.ctx
+        // TODO
     }
 
     #[inline]

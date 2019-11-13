@@ -1,8 +1,10 @@
 use crate::event::*;
-use crate::{EventStream, Window, Settings};
+use crate::{EventBuffer, EventStream, Window, Settings};
 use futures_util::task::LocalSpawnExt;
 use futures_executor::LocalPool;
 use mint::Vector2;
+use std::cell::RefCell;
+use std::sync::Arc;
 use std::future::Future;
 use winit::event::{Event as WinitEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -17,12 +19,32 @@ pub fn run<F, T>(settings: Settings, app: F) -> !
     let stream = EventStream::new();
     let buffer = stream.buffer();
 
-    let event_loop = EventLoop::new::<>();
+    let event_loop = EventLoop::new();
     let window = Window::new(&event_loop, settings);
-    let mut pool = LocalPool::new();
-    let mut spawner = pool.spawner();
-    spawner.spawn_local(app(window, stream)).expect("Failed to start application");
+    let pool = LocalPool::new();
+    pool.spawner().spawn_local(app(window, stream)).expect("Failed to start application");
 
+    do_run(event_loop, pool, buffer)
+}
+
+#[cfg(feature = "gl")]
+use glow::Context;
+
+#[cfg(feature = "gl")]
+pub fn run_gl<T, F>(settings: Settings, app: F) -> !
+        where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, Context, EventStream) -> T {
+    let stream = EventStream::new();
+    let buffer = stream.buffer();
+
+    let event_loop = EventLoop::new();
+    let (window, ctx) = Window::new_gl(&event_loop, settings);
+    let pool = LocalPool::new();
+    pool.spawner().spawn_local(app(window, ctx, stream)).expect("Failed to start application");
+
+    do_run(event_loop, pool, buffer)
+}
+
+fn do_run(event_loop: EventLoop<()>, mut pool: LocalPool, buffer: Arc<RefCell<EventBuffer>>) -> ! {
     event_loop.run(move |event, _, ctrl| {
         match event {
             WinitEvent::WindowEvent { event, .. } => {
