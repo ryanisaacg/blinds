@@ -3,6 +3,7 @@ use glow::Context;
 #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
 use glutin::{PossiblyCurrent, WindowedContext};
 use mint::Vector2;
+use std::sync::Arc;
 use winit::dpi::LogicalSize;
 use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
@@ -50,7 +51,9 @@ impl Default for Settings {
     }
 }
 
-pub struct Window {
+pub struct Window(pub(crate) Arc<WindowContents>);
+
+pub(crate) struct WindowContents {
     #[cfg(any(target_arch = "wasm32", not(feature="gl")))]
     window: WinitWindow,
     #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
@@ -103,13 +106,13 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
         .with_title(settings.title)
 }
 
-impl Window {
-    pub(crate) fn new(el: &EventLoop<()>, settings: Settings) -> Window {
+impl WindowContents {
+    pub(crate) fn new(el: &EventLoop<()>, settings: Settings) -> WindowContents {
         let wb = settings_to_wb(el, &settings);
         #[cfg(any(not(feature="gl"), target_arch = "wasm32"))] let window = {
             let window = wb.build(el).expect("TODO");
             insert_canvas(&window);
-            Window {
+            WindowContents {
                 window,
             }
         };
@@ -121,7 +124,7 @@ impl Window {
             }
             let window = cb.build_windowed(wb, el).expect("TODO");
             let window = unsafe { window.make_current().unwrap() };
-            Window {
+            WindowContents {
                 window,
             }
         };
@@ -131,8 +134,8 @@ impl Window {
     }
 
     #[cfg(feature="gl")]
-    pub(crate) fn new_gl(el: &EventLoop<()>, settings: Settings) -> (Window, Context) {
-        let window = Window::new(el, settings);
+    pub(crate) fn new_gl(el: &EventLoop<()>, settings: Settings) -> (WindowContents, Context) {
+        let window = WindowContents::new(el, settings);
 
         #[cfg(target_arch = "wasm32")] let ctx = {
             #[cfg(feature = "stdweb")] let ctx = {
@@ -202,8 +205,14 @@ impl Window {
         self.window().set_fullscreen(fullscreen_convert(fullscreen, self.window().current_monitor()));
     }
 
-    #[cfg(feature="gl")]
+    pub(crate) fn resize(&self, _size: &LogicalSize) {
+        #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
+        self.window.resize(_size.to_physical(self.window.window().hidpi_factor()));
+    }
+
     pub fn present(&self) {
+        #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
+        self.window.swap_buffers().unwrap();
     }
 
     #[inline]
@@ -213,6 +222,29 @@ impl Window {
         #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
         return self.window.window();
     }
+}
+
+impl Window {
+    pub fn set_cursor_icon(&self, icon: Option<CursorIcon>) {
+        self.0.set_cursor_icon(icon);
+    }
+
+    pub fn size(&self) -> Vector2<f32> {
+        self.0.size()
+    }
+
+    pub fn set_size(&self, size: Vector2<f32>) {
+        self.0.set_size(size);
+    }
+
+    pub fn set_title(&self, title: &str) {
+        self.0.set_title(title);
+    }
+
+    pub fn set_fullscreen(&self, fullscreen: bool) {
+        self.0.set_fullscreen(fullscreen);
+    }
+
 }
 
 pub enum CursorIcon {

@@ -1,5 +1,5 @@
 use crate::event::*;
-use crate::{EventBuffer, EventStream, Window, Settings};
+use crate::{EventBuffer, EventStream, Window, WindowContents, Settings};
 use futures_util::task::LocalSpawnExt;
 use futures_executor::LocalPool;
 use mint::Vector2;
@@ -15,11 +15,11 @@ pub fn run<F, T>(settings: Settings, app: F) -> !
     let buffer = stream.buffer();
 
     let event_loop = EventLoop::new();
-    let window = Window::new(&event_loop, settings);
+    let window = Arc::new(WindowContents::new(&event_loop, settings));
     let pool = LocalPool::new();
-    pool.spawner().spawn_local(app(window, stream)).expect("Failed to start application");
+    pool.spawner().spawn_local(app(Window(window.clone()), stream)).expect("Failed to start application");
 
-    do_run(event_loop, pool, buffer)
+    do_run(event_loop, window, pool, buffer)
 }
 
 #[cfg(feature = "gl")]
@@ -32,19 +32,23 @@ pub fn run_gl<T, F>(settings: Settings, app: F) -> !
     let buffer = stream.buffer();
 
     let event_loop = EventLoop::new();
-    let (window, ctx) = Window::new_gl(&event_loop, settings);
+    let (window, ctx) = WindowContents::new_gl(&event_loop, settings);
+    let window = Arc::new(window);
     let pool = LocalPool::new();
-    pool.spawner().spawn_local(app(window, ctx, stream)).expect("Failed to start application");
+    pool.spawner().spawn_local(app(Window(window.clone()), ctx, stream)).expect("Failed to start application");
 
-    do_run(event_loop, pool, buffer)
+    do_run(event_loop, window, pool, buffer)
 }
 
-fn do_run(event_loop: EventLoop<()>, mut pool: LocalPool, buffer: Arc<RefCell<EventBuffer>>) -> ! {
+fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: LocalPool, buffer: Arc<RefCell<EventBuffer>>) -> ! {
     event_loop.run(move |event, _, ctrl| {
         match event {
             WinitEvent::WindowEvent { event, .. } => {
                 if let winit::event::WindowEvent::CloseRequested = &event {
                     *ctrl = ControlFlow::Exit;
+                }
+                if let winit::event::WindowEvent::Resized(size) = &event {
+                    window.resize(size);
                 }
                 if let Some(event) = convert(event) {
                     buffer.borrow_mut().push(event);
@@ -53,6 +57,8 @@ fn do_run(event_loop: EventLoop<()>, mut pool: LocalPool, buffer: Arc<RefCell<Ev
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
                 if pool.try_run_one() {
                     *ctrl = ControlFlow::Exit;
+                } else {
+                    window.present();
                 }
             }
             _ => ()

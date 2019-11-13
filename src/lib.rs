@@ -5,8 +5,6 @@ mod window;
 
 // TODO: add gilrs events
 // TODO: respect window icons
-// TODO: auto-present the window on desktop
-// TODO: resize the context
 // TODO: error handling
 
 pub use self::event::*;
@@ -18,6 +16,7 @@ pub use self::window::{CursorIcon, Window, Settings};
 pub use self::run::run_gl;
 
 pub(crate) use self::event_stream::EventBuffer;
+pub(crate) use self::window::WindowContents;
 
 pub mod traits {
     pub use futures_util::stream::StreamExt;
