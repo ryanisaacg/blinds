@@ -3,7 +3,6 @@ mod event_stream;
 mod run;
 mod window;
 
-// TODO: add gilrs events
 // TODO: respect window icons
 // TODO: error handling
 
