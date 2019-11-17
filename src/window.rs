@@ -110,7 +110,7 @@ impl WindowContents {
     pub(crate) fn new(el: &EventLoop<()>, settings: Settings) -> WindowContents {
         let wb = settings_to_wb(el, &settings);
         #[cfg(any(not(feature="gl"), target_arch = "wasm32"))] let window = {
-            let window = wb.build(el).expect("TODO");
+            let window = wb.build(el).expect("Failed to create window");
             insert_canvas(&window);
             WindowContents {
                 window,
@@ -122,8 +122,10 @@ impl WindowContents {
             if let Some(msaa) = settings.multisampling {
                 cb = cb.with_multisampling(msaa);
             }
-            let window = cb.build_windowed(wb, el).expect("TODO");
-            let window = unsafe { window.make_current().unwrap() };
+            let window = cb.build_windowed(wb, el).expect("Failed to create window");
+            let window = unsafe {
+                window.make_current().expect("Failed to acquire GL context")
+            };
             WindowContents {
                 window,
             }
@@ -144,7 +146,7 @@ impl WindowContents {
 
                 window.window.canvas()
                     .get_context::<WebGLRenderingContext>()
-                    .unwrap()
+                    .expect("Failed to acquire a WebGL rendering context")
             };
             #[cfg(feature = "web-sys")] let ctx = {
                 use winit::platform::web::WindowExtWebSys;
@@ -152,10 +154,10 @@ impl WindowContents {
 
                 window.window.canvas()
                     .get_context("webgl")
-                    .unwrap()
-                    .unwrap()
+                    .expect("Failed to acquire a WebGL rendering context")
+                    .expect("Failed to acquire a WebGL rendering context")
                     .dyn_into::<web_sys::WebGlRenderingContext>()
-                    .unwrap()
+                    .expect("WebGL context of unexpected type")
             };
 
             glow::Context::from_webgl1_context(ctx)
@@ -212,7 +214,8 @@ impl WindowContents {
 
     pub fn present(&self) {
         #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
-        self.window.swap_buffers().unwrap();
+        self.window.swap_buffers()
+            .expect("Failed to swap buffers")
     }
 
     #[inline]

@@ -40,7 +40,7 @@ pub fn run_gl<T, F>(settings: Settings, app: F) -> !
 
 fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: LocalPool, buffer: Arc<RefCell<EventBuffer>>) -> ! {
     #[cfg(feature = "gilrs")]
-    let mut gilrs = gilrs::Gilrs::new().unwrap();
+    let mut gilrs = gilrs::Gilrs::new();
 
     event_loop.run(move |event, _, ctrl| {
         match event {
@@ -57,11 +57,7 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
             }
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
                 #[cfg(feature = "gilrs")]
-                while let Some(ev) = gilrs.next_event() {
-                    if let Some(ev) = convert_gilrs(ev) {
-                        buffer.borrow_mut().push(ev);
-                    }
-                }
+                process_gilrs_events(&mut gilrs, &buffer);
                 if pool.try_run_one() {
                     *ctrl = ControlFlow::Exit;
                 } else {
@@ -71,6 +67,17 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
             _ => ()
         }
     })
+}
+
+#[cfg(feature = "gilrs")]
+fn process_gilrs_events(gilrs: &mut Result<gilrs::Gilrs, gilrs::Error>, buffer: &Arc<RefCell<EventBuffer>>) {
+    if let Ok(gilrs) = gilrs.as_mut() {
+        while let Some(ev) = gilrs.next_event() {
+            if let Some(ev) = convert_gilrs(ev) {
+                buffer.borrow_mut().push(ev);
+            }
+        }
+    }
 }
 
 fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {

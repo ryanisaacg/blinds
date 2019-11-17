@@ -4,7 +4,6 @@ mod run;
 mod window;
 
 // TODO: respect window icons
-// TODO: error handling
 
 pub use self::event::*;
 pub use self::event_stream::EventStream;
