@@ -3,8 +3,6 @@ mod event_stream;
 mod run;
 mod window;
 
-// TODO: respect window icons
-
 pub use self::event::*;
 pub use self::event_stream::EventStream;
 pub use self::run::run;

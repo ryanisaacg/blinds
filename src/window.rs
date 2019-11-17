@@ -17,6 +17,7 @@ pub struct Settings {
     /// If the application should be fullscreen
     pub fullscreen: bool,
     /// The icon on the window or the favicon on the tab
+    #[cfg(feature = "image")]
     pub icon_path: Option<&'static str>,
     /// How many samples to do for MSAA
     ///
@@ -42,6 +43,7 @@ impl Default for Settings {
             size: Vector2 { x: 1024.0, y: 768.0 },
             cursor_icon: Some(CursorIcon::Default),
             fullscreen: false,
+            #[cfg(feature = "image")]
             icon_path: None,
             multisampling: None,
             vsync: false,
@@ -69,19 +71,29 @@ fn fullscreen_convert(fullscreen: bool, monitor: MonitorHandle) -> Option<Fullsc
 }
 
 #[cfg(all(feature = "stdweb", target_arch = "wasm32"))]
-fn insert_canvas(window: &WinitWindow) -> std_web::web::html_element::CanvasElement {
+fn insert_canvas(window: &WinitWindow, settings: &Settings) -> std_web::web::html_element::CanvasElement {
     use winit::platform::web::WindowExtStdweb;
     use std_web::web::document;
     use std_web::traits::*;
 
     let canvas = window.canvas();
-    document().body().expect("Document has no body node").append_child(&canvas);
+    let document = document();
+    document.body().expect("Document has no body node").append_child(&canvas);
+
+    if let Some(path) = settings.icon_path {
+        let head = document.head().expect("Failed to find head node");
+        let element = document.create_element("link").expect("Failed to create link element");
+        element.set_attribute("rel", "shortcut icon").expect("Failed to create favicon element");
+        element.set_attribute("type", "image/png").expect("Failed to create favicon element");
+        element.set_attribute("href", path).expect("Failed to create favicon element");
+        head.append_child(&element);
+    }
 
     canvas
 }
 
 #[cfg(all(feature = "web-sys", target_arch = "wasm32"))]
-fn insert_canvas(window: &WinitWindow) -> web_sys::HtmlCanvasElement {
+fn insert_canvas(window: &WinitWindow, settings: &Settings) -> web_sys::HtmlCanvasElement {
     use winit::platform::web::WindowExtWebSys;
     let canvas = window.canvas();
     let window = web_sys::window().expect("Failed to obtain window");
@@ -89,13 +101,33 @@ fn insert_canvas(window: &WinitWindow) -> web_sys::HtmlCanvasElement {
 
     document.body().expect("Document has no body node").append_child(&canvas).expect("Failed to insert canvas");
 
+    if let Some(path) = settings.icon_path {
+        let head = document.head().expect("Failed to find head node");
+        let element = document.create_element("link").expect("Failed to create link element");
+        element.set_attribute("rel", "shortcut icon").expect("Failed to create favicon element");
+        element.set_attribute("type", "image/png").expect("Failed to create favicon element");
+        element.set_attribute("href", path).expect("Failed to create favicon element");
+        head.append_child(&element).expect("Failed to add favicon");
+    }
+
     canvas
 }
 
-#[cfg(any(not(feature="gl"), target = "wasm32-unknown-unknown"))]
-fn insert_canvas(_window: &WinitWindow) {}
+#[cfg(all(not(feature="gl"), not(target_arch = "wasm32")))]
+fn insert_canvas(_window: &WinitWindow, _settings: &Settings) {}
 
 fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
+    #[cfg(feature = "image")]
+    let icon = settings.icon_path.map(|path| {
+        let img = image::open(path).expect("Failed to load image");
+        let rgba = img.to_rgba();
+        let (width, height) = rgba.dimensions();
+        let buffer = rgba.into_raw();
+        
+        winit::window::Icon::from_rgba(buffer, width, height).expect("Bad image data")
+    });
+    #[cfg(not(feature = "image"))]
+    let icon = None;
     WindowBuilder::new()
         .with_inner_size(LogicalSize {
             width: settings.size.x as f64,
@@ -104,6 +136,7 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
         .with_resizable(settings.resizable)
         .with_fullscreen(fullscreen_convert(settings.fullscreen, el.primary_monitor()))
         .with_title(settings.title)
+        .with_window_icon(icon)
 }
 
 impl WindowContents {
@@ -111,7 +144,7 @@ impl WindowContents {
         let wb = settings_to_wb(el, &settings);
         #[cfg(any(not(feature="gl"), target_arch = "wasm32"))] let window = {
             let window = wb.build(el).expect("Failed to create window");
-            insert_canvas(&window);
+            insert_canvas(&window, &settings);
             WindowContents {
                 window,
             }
