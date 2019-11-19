@@ -42,6 +42,8 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
     #[cfg(feature = "gilrs")]
     let mut gilrs = gilrs::Gilrs::new();
 
+    let mut finished = pool.try_run_one();
+
     event_loop.run(move |event, _, ctrl| {
         match event {
             WinitEvent::NewEvents(winit::event::StartCause::Init) => {
@@ -61,11 +63,12 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
-                if pool.try_run_one() {
-                    *ctrl = ControlFlow::Exit;
-                }
+                finished = pool.try_run_one()
             }
             _ => ()
+        }
+        if finished {
+            *ctrl = ControlFlow::Exit;
         }
     })
 }
