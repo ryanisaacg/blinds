@@ -44,6 +44,9 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
 
     event_loop.run(move |event, _, ctrl| {
         match event {
+            WinitEvent::NewEvents(winit::event::StartCause::Init) => {
+                *ctrl = ControlFlow::Poll;
+            }
             WinitEvent::WindowEvent { event, .. } => {
                 if let winit::event::WindowEvent::CloseRequested = &event {
                     *ctrl = ControlFlow::Exit;
@@ -60,8 +63,6 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
                 process_gilrs_events(&mut gilrs, &buffer);
                 if pool.try_run_one() {
                     *ctrl = ControlFlow::Exit;
-                } else {
-                    window.present();
                 }
             }
             _ => ()

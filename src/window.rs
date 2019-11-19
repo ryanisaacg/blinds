@@ -281,6 +281,10 @@ impl Window {
         self.0.set_fullscreen(fullscreen);
     }
 
+    #[cfg(feature = "gl")]
+    pub fn present(&self) {
+        self.0.present();
+    }
 }
 
 pub enum CursorIcon {
