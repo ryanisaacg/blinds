@@ -7,16 +7,10 @@ fn main() {
 }
 
 async fn app(_window: Window, mut events: EventStream) {
-    while let Some(frame) = events.next().await {
-        let mut close = false;
-        for event in frame {
-            if let Event::KeyboardInput { key: Key::Escape, .. } = event {
-                close = true;
-            }
-            println!("{:?}", event);
-        }
-        if close {
+    while let Some(ev) = events.next().await {
+        if let Event::KeyboardInput { key: Key::Escape, .. } = ev {
             break;
         }
+        println!("{:?}", ev);
     }
 }

@@ -61,6 +61,7 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
                 }
             }
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
+                buffer.borrow_mut().push(Event::EventsCleared);
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
                 finished = pool.try_run_one()

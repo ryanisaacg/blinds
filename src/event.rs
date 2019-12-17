@@ -38,7 +38,8 @@ pub enum Event {
     GamepadEvent {
         id: GamepadId,
         event: GamepadEvent
-    }
+    },
+    EventsCleared,
 }
 
 
