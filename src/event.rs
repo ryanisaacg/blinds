@@ -6,6 +6,7 @@ use winit::event::{DeviceId, MouseScrollDelta as MSD, VirtualKeyCode};
 #[derive(Debug)]
 pub enum Event {
     Resized(Vector2<f32>),
+    ScaleChanged(f32),
     Focused(bool),
     ReceivedCharacter(char),
     KeyboardInput {

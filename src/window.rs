@@ -245,10 +245,15 @@ impl WindowContents {
         self.window.resize(_size.to_physical(self.window.window().hidpi_factor()));
     }
 
+    #[cfg(feature = "gl")]
     pub fn present(&self) {
         #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
         self.window.swap_buffers()
             .expect("Failed to swap buffers")
+    }
+
+    pub fn scale(&self) -> f32 {
+        self.window().hidpi_factor() as f32
     }
 
     #[inline]
@@ -267,6 +272,10 @@ impl Window {
 
     pub fn size(&self) -> Vector2<f32> {
         self.0.size()
+    }
+
+    pub fn scale(&self) -> f32 {
+        self.0.scale()
     }
 
     pub fn set_size(&self, size: Vector2<f32>) {

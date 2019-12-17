@@ -89,6 +89,7 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ls_to_vec(ls)),
+        HiDpiFactorChanged(scale) => Event::ScaleChanged(scale as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
         KeyboardInput { input: winit::event::KeyboardInput {
