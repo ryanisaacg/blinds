@@ -8,19 +8,18 @@ jobs:
         os: [ubuntu-latest, windows-latest, macOS-latest]
         rust: [stable, nightly]
     steps:
-    - uses: hecrj/setup-rust-action@v1
+    - uses: hecrj/setup-rust-action@v1.2.0
       with:
         rust-version: ${{ matrix.rust }}
-    - name: Install clippy and rustfmt
-      run: |
-        rustup component add clippy
-        rustup component add rustfmt
-    # Checking normal
-    - name: Run tests
-      run: |
-        cargo test
-        cargo clippy
-    # Checking fmt
-    - name: Rustfmt
+        components: clippy,rustfmt
+        targets: wasm32-unknown-unknown
+    - uses: actions/checkout@master
+    - name: Check formatting
       run: cargo fmt -- --check
+    - name: Clippy desktop
+      run: cargo clippy -- -D warnings
+    - name: Clippy stdweb
+      run: cargo clippy --target wasm32-unknown-unknown --features stdweb -- -D warnings
+    - name: Clippy web-sys
+      run: cargo clippy --target wasm32-unknown-unknown --features web-sys -- -D warnings
 
