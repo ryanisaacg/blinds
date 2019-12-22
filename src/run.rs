@@ -9,6 +9,15 @@ use std::sync::Arc;
 use winit::event::Event as WinitEvent;
 use winit::event_loop::{ControlFlow, EventLoop};
 
+/// The entry point for a blinds-based application
+///
+/// `run` acts as the executor for your async application, and it handles your event loop on both
+/// desktop and web. It is a single-threaded executor, because wasm doesn't support thread at the
+/// moment.
+///
+/// Currently blinds only supports one window, and `settings` determines how it will be
+/// constructed. If the 'gl' feature is enabled, it will also determine some OpenGL context
+/// settings.
 pub fn run<F, T>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
