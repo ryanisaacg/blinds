@@ -12,7 +12,7 @@ pub struct EventStream {
 }
 
 impl EventStream {
-    pub fn new() -> EventStream {
+    pub(crate) fn new() -> EventStream {
         EventStream {
             buffer: Arc::new(RefCell::new(EventBuffer {
                 events: VecDeque::new(),
