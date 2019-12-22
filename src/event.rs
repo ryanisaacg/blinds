@@ -1,12 +1,12 @@
 use mint::Vector2;
+use std::cmp::Ordering;
 use winit::dpi::LogicalPosition;
 use winit::event::{DeviceId, MouseScrollDelta as MSD, VirtualKeyCode};
-
-// TODO: gamepad events
 
 #[derive(Debug)]
 pub enum Event {
     Resized(Vector2<f32>),
+    ScaleChanged(f32),
     Focused(bool),
     ReceivedCharacter(char),
     KeyboardInput {
@@ -36,6 +36,11 @@ pub enum Event {
         button: MouseButton,
         modifiers: Modifiers
     },
+    GamepadEvent {
+        id: GamepadId,
+        event: GamepadEvent
+    },
+    EventsCleared,
 }
 
 
@@ -296,4 +301,92 @@ impl From<VirtualKeyCode> for Key {
     }
 }
 
+#[derive(Clone, PartialEq, Eq, Debug, Hash)]
+pub struct GamepadId(
+    #[cfg(feature = "gilrs")]
+    pub(crate) gilrs::GamepadId,
+    #[cfg(not(feature = "gilrs"))]
+    usize
+);
 
+impl PartialOrd for GamepadId {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for GamepadId {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let a: usize = self.0.into();
+        let b: usize = other.0.into();
+        a.cmp(&b)
+    }
+}
+
+#[derive(Debug)]
+pub enum GamepadEvent {
+    Connected,
+    Disconnected,
+    Button {
+        button: GamepadButton,
+        state: ElementState
+    },
+    Axis {
+        axis: GamepadAxis,
+        value: f32
+    },
+}
+
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub enum GamepadButton {
+    Start,
+    Select,
+
+    /// The north face button.
+    ///
+    /// * Nintendo: X
+    /// * Playstation: Triangle
+    /// * XBox: Y
+    North,
+    /// The south face button.
+    ///
+    /// * Nintendo: B
+    /// * Playstation: X
+    /// * XBox: A
+    South,
+    /// The east face button.
+    ///
+    /// * Nintendo: A
+    /// * Playstation: Circle
+    /// * XBox: B
+    East,
+    /// The west face button.
+    ///
+    /// * Nintendo: Y
+    /// * Playstation: Square
+    /// * XBox: X
+    West,
+
+    LeftStick,
+    RightStick,
+
+    LeftTrigger,
+    RightTrigger,
+
+    LeftShoulder,
+    RightShoulder,
+
+    DPadUp,
+    DPadDown,
+    DPadLeft,
+    DPadRight,
+}
+
+#[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+pub enum GamepadAxis {
+    LeftStickX,
+    LeftStickY,
+
+    RightStickX,
+    RightStickY,
+}

@@ -26,18 +26,18 @@ impl EventStream {
 }
 
 impl Stream for EventStream {
-    type Item = Vec<Event>;
+    type Item = Event;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context)
         -> Poll<Option<Self::Item>> {
         let mut buffer = self.buffer.borrow_mut();
 
-        if buffer.events.is_empty() {
-            buffer.waker = Some(cx.waker().clone());
-            Poll::Pending
-        } else {
-            let events = buffer.events.drain(..).collect();
-            Poll::Ready(Some(events))
+        match buffer.events.pop_front() {
+            Some(event) => Poll::Ready(Some(event)),
+            None => {
+                buffer.waker = Some(cx.waker().clone());
+                Poll::Pending
+            }
         }
     }
 }

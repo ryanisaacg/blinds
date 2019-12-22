@@ -22,4 +22,3 @@ jobs:
       run: cargo clippy --target wasm32-unknown-unknown --features stdweb -- -D warnings
     - name: Clippy web-sys
       run: cargo clippy --target wasm32-unknown-unknown --features web-sys -- -D warnings
-

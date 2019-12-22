@@ -1,50 +1,95 @@
 use crate::event::*;
-use crate::{EventStream, Window, Settings};
+use crate::{EventBuffer, EventStream, Window, WindowContents, Settings};
 use futures_util::task::LocalSpawnExt;
 use futures_executor::LocalPool;
 use mint::Vector2;
-use std::future::Future;
+use std::cell::RefCell; use std::sync::Arc; use std::future::Future;
 use winit::event::{Event as WinitEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
-
-// TODO: add gilrs events
-// TODO: add timing handling
-// TODO: provide custom windowbuilder
-
 
 pub fn run<F, T>(settings: Settings, app: F) -> !
         where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, EventStream) -> T {
     let stream = EventStream::new();
     let buffer = stream.buffer();
 
-    let event_loop = EventLoop::new::<>();
-    let window = Window::new(&event_loop, settings);
-    let mut pool = LocalPool::new();
-    let mut spawner = pool.spawner();
-    spawner.spawn_local(app(window, stream)).expect("Failed to start application");
+    let event_loop = EventLoop::new();
+    let window = Arc::new(WindowContents::new(&event_loop, settings));
+    let pool = LocalPool::new();
+    pool.spawner().spawn_local(app(Window(window.clone()), stream)).expect("Failed to start application");
+
+    do_run(event_loop, window, pool, buffer)
+}
+
+#[cfg(feature = "gl")]
+use glow::Context;
+
+#[cfg(feature = "gl")]
+pub fn run_gl<T, F>(settings: Settings, app: F) -> !
+        where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, Context, EventStream) -> T {
+    let stream = EventStream::new();
+    let buffer = stream.buffer();
+
+    let event_loop = EventLoop::new();
+    let (window, ctx) = WindowContents::new_gl(&event_loop, settings);
+    let window = Arc::new(window);
+    let pool = LocalPool::new();
+    pool.spawner().spawn_local(app(Window(window.clone()), ctx, stream)).expect("Failed to start application");
+
+    do_run(event_loop, window, pool, buffer)
+}
+
+fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: LocalPool, buffer: Arc<RefCell<EventBuffer>>) -> ! {
+    #[cfg(feature = "gilrs")]
+    let mut gilrs = gilrs::Gilrs::new();
+
+    let mut finished = pool.try_run_one();
 
     event_loop.run(move |event, _, ctrl| {
         match event {
+            WinitEvent::NewEvents(winit::event::StartCause::Init) => {
+                *ctrl = ControlFlow::Poll;
+            }
             WinitEvent::WindowEvent { event, .. } => {
                 if let winit::event::WindowEvent::CloseRequested = &event {
                     *ctrl = ControlFlow::Exit;
                 }
-                if let Some(event) = convert(event) {
+                if let winit::event::WindowEvent::Resized(size) = &event {
+                    window.resize(size);
+                }
+                if let Some(event) = convert_winit(event) {
                     buffer.borrow_mut().push(event);
                 }
             }
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
-                pool.run_until_stalled();
+                buffer.borrow_mut().push(Event::EventsCleared);
+                #[cfg(feature = "gilrs")]
+                process_gilrs_events(&mut gilrs, &buffer);
+                finished = pool.try_run_one()
             }
             _ => ()
+        }
+        if finished {
+            *ctrl = ControlFlow::Exit;
         }
     })
 }
 
-fn convert(event: winit::event::WindowEvent) -> Option<Event> {
+#[cfg(feature = "gilrs")]
+fn process_gilrs_events(gilrs: &mut Result<gilrs::Gilrs, gilrs::Error>, buffer: &Arc<RefCell<EventBuffer>>) {
+    if let Ok(gilrs) = gilrs.as_mut() {
+        while let Some(ev) = gilrs.next_event() {
+            if let Some(ev) = convert_gilrs(ev) {
+                buffer.borrow_mut().push(ev);
+            }
+        }
+    }
+}
+
+fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ls_to_vec(ls)),
+        HiDpiFactorChanged(scale) => Event::ScaleChanged(scale as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
         KeyboardInput { input: winit::event::KeyboardInput {
@@ -77,6 +122,77 @@ fn convert(event: winit::event::WindowEvent) -> Option<Event> {
             modifiers: modifiers.into(),
         },
         _ => return None
+    })
+}
+
+#[cfg(feature = "gilrs")]
+fn convert_gilrs(event: gilrs::Event) -> Option<Event> {
+    use gilrs::ev::EventType::*;
+    let gilrs::Event { id, event, .. } = event;
+    let event = match event {
+        ButtonPressed(btn, _) => convert_gilrs_button(btn)
+            .map(|button| GamepadEvent::Button {
+                button,
+                state: ElementState::Pressed
+            }),
+        ButtonRepeated(_, _) => None,
+        ButtonReleased(btn, _) => convert_gilrs_button(btn)
+            .map(|button| GamepadEvent::Button {
+                button,
+                state: ElementState::Released
+            }),
+        ButtonChanged(_, _, _) => None,
+        AxisChanged(axis, value, _) => convert_gilrs_axis(axis)
+            .map(|axis| GamepadEvent::Axis {
+                axis,
+                value
+            }),
+        Connected => Some(GamepadEvent::Connected),
+        Disconnected => Some(GamepadEvent::Disconnected),
+        Dropped => None,
+    };
+    event.map(|event| Event::GamepadEvent {
+        id: GamepadId(id),
+        event,
+    })
+}
+
+#[cfg(feature = "gilrs")]
+fn convert_gilrs_button(event: gilrs::ev::Button) -> Option<GamepadButton> {
+    use gilrs::ev::Button::*;
+    Some(match event {
+        South => GamepadButton::South,
+        East => GamepadButton::East,
+        North => GamepadButton::North,
+        West => GamepadButton::West,
+        LeftTrigger => GamepadButton::LeftShoulder,
+        LeftTrigger2 => GamepadButton::LeftShoulder,
+        RightTrigger => GamepadButton::RightShoulder,
+        RightTrigger2 => GamepadButton::RightTrigger,
+        Select => GamepadButton::Select,
+        Start => GamepadButton::Start,
+        LeftThumb => GamepadButton::LeftStick,
+        RightThumb => GamepadButton::RightStick,
+        DPadUp => GamepadButton::DPadUp,
+        DPadDown => GamepadButton::DPadDown,
+        DPadLeft => GamepadButton::DPadLeft,
+        DPadRight => GamepadButton::DPadRight,
+
+        C | Z | Unknown | Mode => return None,
+    })
+}
+
+#[cfg(feature = "gilrs")]
+fn convert_gilrs_axis(axis: gilrs::ev::Axis) -> Option<GamepadAxis> {
+    use gilrs::ev::Axis::*;
+
+    Some(match axis {
+        LeftStickX => GamepadAxis::LeftStickX,
+        LeftStickY => GamepadAxis::LeftStickY,
+        RightStickX => GamepadAxis::RightStickX,
+        RightStickY => GamepadAxis::RightStickY,
+
+        LeftZ | RightZ | DPadX | DPadY | Unknown => return None,
     })
 }
 
