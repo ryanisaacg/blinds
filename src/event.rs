@@ -12,7 +12,7 @@ pub enum Event {
     KeyboardInput {
         key: Key,
         modifiers: Modifiers,
-        state: ElementState
+        state: ElementState,
     },
     MouseEntered {
         pointer: Pointer,
@@ -34,15 +34,14 @@ pub enum Event {
         pointer: Pointer,
         state: ElementState,
         button: MouseButton,
-        modifiers: Modifiers
+        modifiers: Modifiers,
     },
     GamepadEvent {
         id: GamepadId,
-        event: GamepadEvent
+        event: GamepadEvent,
     },
     EventsCleared,
 }
-
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Modifiers {
@@ -67,7 +66,7 @@ impl From<winit::event::ModifiersState> for Modifiers {
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum ElementState {
     Pressed,
-    Released
+    Released,
 }
 
 impl From<winit::event::ElementState> for ElementState {
@@ -86,7 +85,10 @@ pub struct Pointer(pub(crate) DeviceId);
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum MouseButton {
-    Left, Middle, Right, Other(u8)
+    Left,
+    Middle,
+    Right,
+    Other(u8),
 }
 
 impl From<winit::event::MouseButton> for MouseButton {
@@ -112,25 +114,175 @@ impl From<MSD> for MouseScrollDelta {
             MSD::LineDelta(x, y) => Self::Lines(Vector2 { x, y }),
             MSD::PixelDelta(LogicalPosition { x, y }) => Self::Pixels(Vector2 {
                 x: x as f32,
-                y: y as f32
-            })
+                y: y as f32,
+            }),
         }
     }
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Key {
-    Key1, Key2, Key3, Key4, Key5, Key6, Key7, Key8, Key9, Key0, A, B, C, D, E, F, G, H, I, J, K, L, M,
-    N, O, P, Q, R, S, T, U, V, W, X, Y, Z, Escape, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
-    F13, F14, F15, F16, F17, F18, F19, F20, F21, F22, F23, F24, Snapshot, Scroll, Pause, Insert, Home, Delete, End, PageDown, PageUp, Left, Up, Right,
-    Down, Back, Return, Space, Compose, Caret, Numlock, Numpad0, Numpad1, Numpad2, Numpad3, Numpad4, Numpad5,
-    Numpad6, Numpad7, Numpad8, Numpad9, AbntC1, AbntC2, Add, Apostrophe, Apps, At, Ax, Backslash, Calculator,
-    Capital, Colon, Comma, Convert, Decimal, Divide, Equals, Grave, Kana, Kanji, LAlt, LBracket, LControl,
-    LShift, LWin, Mail, MediaSelect, MediaStop, Minus, Multiply, Mute, MyComputer, NavigateForward,
-    NavigateBackward, NextTrack, NoConvert, NumpadComma, NumpadEnter, NumpadEquals, OEM102, Period, PlayPause,
-    Power, PrevTrack, RAlt, RBracket, RControl, RShift, RWin, Semicolon, Slash, Sleep, Stop, Subtract,
-    Sysrq, Tab, Underline, Unlabeled, VolumeDown, VolumeUp, Wake, WebBack, WebFavorites, WebForward, WebHome,
-    WebRefresh, WebSearch, WebStop, Yen, Cut, Copy, Paste
+    Key1,
+    Key2,
+    Key3,
+    Key4,
+    Key5,
+    Key6,
+    Key7,
+    Key8,
+    Key9,
+    Key0,
+    A,
+    B,
+    C,
+    D,
+    E,
+    F,
+    G,
+    H,
+    I,
+    J,
+    K,
+    L,
+    M,
+    N,
+    O,
+    P,
+    Q,
+    R,
+    S,
+    T,
+    U,
+    V,
+    W,
+    X,
+    Y,
+    Z,
+    Escape,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    F11,
+    F12,
+    F13,
+    F14,
+    F15,
+    F16,
+    F17,
+    F18,
+    F19,
+    F20,
+    F21,
+    F22,
+    F23,
+    F24,
+    Snapshot,
+    Scroll,
+    Pause,
+    Insert,
+    Home,
+    Delete,
+    End,
+    PageDown,
+    PageUp,
+    Left,
+    Up,
+    Right,
+    Down,
+    Back,
+    Return,
+    Space,
+    Compose,
+    Caret,
+    Numlock,
+    Numpad0,
+    Numpad1,
+    Numpad2,
+    Numpad3,
+    Numpad4,
+    Numpad5,
+    Numpad6,
+    Numpad7,
+    Numpad8,
+    Numpad9,
+    AbntC1,
+    AbntC2,
+    Add,
+    Apostrophe,
+    Apps,
+    At,
+    Ax,
+    Backslash,
+    Calculator,
+    Capital,
+    Colon,
+    Comma,
+    Convert,
+    Decimal,
+    Divide,
+    Equals,
+    Grave,
+    Kana,
+    Kanji,
+    LAlt,
+    LBracket,
+    LControl,
+    LShift,
+    LWin,
+    Mail,
+    MediaSelect,
+    MediaStop,
+    Minus,
+    Multiply,
+    Mute,
+    MyComputer,
+    NavigateForward,
+    NavigateBackward,
+    NextTrack,
+    NoConvert,
+    NumpadComma,
+    NumpadEnter,
+    NumpadEquals,
+    OEM102,
+    Period,
+    PlayPause,
+    Power,
+    PrevTrack,
+    RAlt,
+    RBracket,
+    RControl,
+    RShift,
+    RWin,
+    Semicolon,
+    Slash,
+    Sleep,
+    Stop,
+    Subtract,
+    Sysrq,
+    Tab,
+    Underline,
+    Unlabeled,
+    VolumeDown,
+    VolumeUp,
+    Wake,
+    WebBack,
+    WebFavorites,
+    WebForward,
+    WebHome,
+    WebRefresh,
+    WebSearch,
+    WebStop,
+    Yen,
+    Cut,
+    Copy,
+    Paste,
 }
 
 impl From<VirtualKeyCode> for Key {
@@ -303,10 +455,8 @@ impl From<VirtualKeyCode> for Key {
 
 #[derive(Clone, PartialEq, Eq, Debug, Hash)]
 pub struct GamepadId(
-    #[cfg(feature = "gilrs")]
-    pub(crate) gilrs::GamepadId,
-    #[cfg(not(feature = "gilrs"))]
-    usize
+    #[cfg(feature = "gilrs")] pub(crate) gilrs::GamepadId,
+    #[cfg(not(feature = "gilrs"))] usize,
 );
 
 impl PartialOrd for GamepadId {
@@ -329,11 +479,11 @@ pub enum GamepadEvent {
     Disconnected,
     Button {
         button: GamepadButton,
-        state: ElementState
+        state: ElementState,
     },
     Axis {
         axis: GamepadAxis,
-        value: f32
+        value: f32,
     },
 }
 

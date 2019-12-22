@@ -1,6 +1,6 @@
 #[cfg(feature = "gl")]
 use glow::Context;
-#[cfg(all(feature="gl", not(target_arch = "wasm32")))]
+#[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
 use glutin::{PossiblyCurrent, WindowedContext};
 use mint::Vector2;
 use std::sync::Arc;
@@ -40,7 +40,10 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Settings {
         Settings {
-            size: Vector2 { x: 1024.0, y: 768.0 },
+            size: Vector2 {
+                x: 1024.0,
+                y: 768.0,
+            },
             cursor_icon: Some(CursorIcon::Default),
             fullscreen: false,
             #[cfg(feature = "image")]
@@ -56,9 +59,9 @@ impl Default for Settings {
 pub struct Window(pub(crate) Arc<WindowContents>);
 
 pub(crate) struct WindowContents {
-    #[cfg(any(target_arch = "wasm32", not(feature="gl")))]
+    #[cfg(any(target_arch = "wasm32", not(feature = "gl")))]
     window: WinitWindow,
-    #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
+    #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
     window: WindowedContext<PossiblyCurrent>,
 }
 
@@ -71,21 +74,35 @@ fn fullscreen_convert(fullscreen: bool, monitor: MonitorHandle) -> Option<Fullsc
 }
 
 #[cfg(all(feature = "stdweb", target_arch = "wasm32"))]
-fn insert_canvas(window: &WinitWindow, settings: &Settings) -> std_web::web::html_element::CanvasElement {
-    use winit::platform::web::WindowExtStdweb;
-    use std_web::web::document;
+fn insert_canvas(
+    window: &WinitWindow,
+    settings: &Settings,
+) -> std_web::web::html_element::CanvasElement {
     use std_web::traits::*;
+    use std_web::web::document;
+    use winit::platform::web::WindowExtStdweb;
 
     let canvas = window.canvas();
     let document = document();
-    document.body().expect("Document has no body node").append_child(&canvas);
+    document
+        .body()
+        .expect("Document has no body node")
+        .append_child(&canvas);
 
     if let Some(path) = settings.icon_path {
         let head = document.head().expect("Failed to find head node");
-        let element = document.create_element("link").expect("Failed to create link element");
-        element.set_attribute("rel", "shortcut icon").expect("Failed to create favicon element");
-        element.set_attribute("type", "image/png").expect("Failed to create favicon element");
-        element.set_attribute("href", path).expect("Failed to create favicon element");
+        let element = document
+            .create_element("link")
+            .expect("Failed to create link element");
+        element
+            .set_attribute("rel", "shortcut icon")
+            .expect("Failed to create favicon element");
+        element
+            .set_attribute("type", "image/png")
+            .expect("Failed to create favicon element");
+        element
+            .set_attribute("href", path)
+            .expect("Failed to create favicon element");
         head.append_child(&element);
     }
 
@@ -99,21 +116,33 @@ fn insert_canvas(window: &WinitWindow, settings: &Settings) -> web_sys::HtmlCanv
     let window = web_sys::window().expect("Failed to obtain window");
     let document = window.document().expect("Failed to obtain document");
 
-    document.body().expect("Document has no body node").append_child(&canvas).expect("Failed to insert canvas");
+    document
+        .body()
+        .expect("Document has no body node")
+        .append_child(&canvas)
+        .expect("Failed to insert canvas");
 
     if let Some(path) = settings.icon_path {
         let head = document.head().expect("Failed to find head node");
-        let element = document.create_element("link").expect("Failed to create link element");
-        element.set_attribute("rel", "shortcut icon").expect("Failed to create favicon element");
-        element.set_attribute("type", "image/png").expect("Failed to create favicon element");
-        element.set_attribute("href", path).expect("Failed to create favicon element");
+        let element = document
+            .create_element("link")
+            .expect("Failed to create link element");
+        element
+            .set_attribute("rel", "shortcut icon")
+            .expect("Failed to create favicon element");
+        element
+            .set_attribute("type", "image/png")
+            .expect("Failed to create favicon element");
+        element
+            .set_attribute("href", path)
+            .expect("Failed to create favicon element");
         head.append_child(&element).expect("Failed to add favicon");
     }
 
     canvas
 }
 
-#[cfg(all(not(feature="gl"), not(target_arch = "wasm32")))]
+#[cfg(all(not(feature = "gl"), not(target_arch = "wasm32")))]
 fn insert_canvas(_window: &WinitWindow, _settings: &Settings) {}
 
 fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
@@ -123,7 +152,7 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
         let rgba = img.to_rgba();
         let (width, height) = rgba.dimensions();
         let buffer = rgba.into_raw();
-        
+
         winit::window::Icon::from_rgba(buffer, width, height).expect("Bad image data")
     });
     #[cfg(not(feature = "image"))]
@@ -131,10 +160,13 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
     WindowBuilder::new()
         .with_inner_size(LogicalSize {
             width: settings.size.x as f64,
-            height: settings.size.y as f64
+            height: settings.size.y as f64,
         })
         .with_resizable(settings.resizable)
-        .with_fullscreen(fullscreen_convert(settings.fullscreen, el.primary_monitor()))
+        .with_fullscreen(fullscreen_convert(
+            settings.fullscreen,
+            el.primary_monitor(),
+        ))
         .with_title(settings.title)
         .with_window_icon(icon)
 }
@@ -142,50 +174,52 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
 impl WindowContents {
     pub(crate) fn new(el: &EventLoop<()>, settings: Settings) -> WindowContents {
         let wb = settings_to_wb(el, &settings);
-        #[cfg(any(not(feature="gl"), target_arch = "wasm32"))] let window = {
+        #[cfg(any(not(feature = "gl"), target_arch = "wasm32"))]
+        let window = {
             let window = wb.build(el).expect("Failed to create window");
             insert_canvas(&window, &settings);
-            WindowContents {
-                window,
-            }
+            WindowContents { window }
         };
-        #[cfg(all(feature="gl", not(target_arch = "wasm32")))] let window = {
-            let mut cb = glutin::ContextBuilder::new()
-                .with_vsync(settings.vsync);
+        #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
+        let window = {
+            let mut cb = glutin::ContextBuilder::new().with_vsync(settings.vsync);
             if let Some(msaa) = settings.multisampling {
                 cb = cb.with_multisampling(msaa);
             }
             let window = cb.build_windowed(wb, el).expect("Failed to create window");
-            let window = unsafe {
-                window.make_current().expect("Failed to acquire GL context")
-            };
-            WindowContents {
-                window,
-            }
+            let window = unsafe { window.make_current().expect("Failed to acquire GL context") };
+            WindowContents { window }
         };
         window.set_cursor_icon(settings.cursor_icon);
 
         window
     }
 
-    #[cfg(feature="gl")]
+    #[cfg(feature = "gl")]
     pub(crate) fn new_gl(el: &EventLoop<()>, settings: Settings) -> (WindowContents, Context) {
         let window = WindowContents::new(el, settings);
 
-        #[cfg(target_arch = "wasm32")] let ctx = {
-            #[cfg(feature = "stdweb")] let ctx = {
-                use winit::platform::web::WindowExtStdweb;
+        #[cfg(target_arch = "wasm32")]
+        let ctx = {
+            #[cfg(feature = "stdweb")]
+            let ctx = {
                 use webgl_stdweb::WebGLRenderingContext;
+                use winit::platform::web::WindowExtStdweb;
 
-                window.window.canvas()
+                window
+                    .window
+                    .canvas()
                     .get_context::<WebGLRenderingContext>()
                     .expect("Failed to acquire a WebGL rendering context")
             };
-            #[cfg(feature = "web-sys")] let ctx = {
-                use winit::platform::web::WindowExtWebSys;
+            #[cfg(feature = "web-sys")]
+            let ctx = {
                 use wasm_bindgen::JsCast;
+                use winit::platform::web::WindowExtWebSys;
 
-                window.window.canvas()
+                window
+                    .window
+                    .canvas()
                     .get_context("webgl")
                     .expect("Failed to acquire a WebGL rendering context")
                     .expect("Failed to acquire a WebGL rendering context")
@@ -197,9 +231,7 @@ impl WindowContents {
         };
         #[cfg(not(target_arch = "wasm32"))]
         let ctx = {
-            glow::Context::from_loader_function(|s| {
-                window.window.get_proc_address(s) as *const _
-            })
+            glow::Context::from_loader_function(|s| window.window.get_proc_address(s) as *const _)
         };
 
         (window, ctx)
@@ -237,19 +269,22 @@ impl WindowContents {
     }
 
     pub fn set_fullscreen(&self, fullscreen: bool) {
-        self.window().set_fullscreen(fullscreen_convert(fullscreen, self.window().current_monitor()));
+        self.window().set_fullscreen(fullscreen_convert(
+            fullscreen,
+            self.window().current_monitor(),
+        ));
     }
 
     pub(crate) fn resize(&self, _size: &LogicalSize) {
         #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
-        self.window.resize(_size.to_physical(self.window.window().hidpi_factor()));
+        self.window
+            .resize(_size.to_physical(self.window.window().hidpi_factor()));
     }
 
     #[cfg(feature = "gl")]
     pub fn present(&self) {
         #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
-        self.window.swap_buffers()
-            .expect("Failed to swap buffers")
+        self.window.swap_buffers().expect("Failed to swap buffers")
     }
 
     pub fn scale(&self) -> f32 {
@@ -258,9 +293,9 @@ impl WindowContents {
 
     #[inline]
     fn window(&self) -> &WinitWindow {
-        #[cfg(any(not(feature="gl"), target_arch = "wasm32"))]
+        #[cfg(any(not(feature = "gl"), target_arch = "wasm32"))]
         return &self.window;
-        #[cfg(all(feature="gl", not(target_arch = "wasm32")))]
+        #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
         return self.window.window();
     }
 }

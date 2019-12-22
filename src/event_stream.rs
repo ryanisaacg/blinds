@@ -1,10 +1,10 @@
 use crate::Event;
 use futures_core::stream::Stream;
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::pin::Pin;
-use std::task::{Context, Poll, Waker};
-use std::cell::RefCell;
 use std::sync::Arc;
+use std::task::{Context, Poll, Waker};
 
 pub struct EventStream {
     buffer: Arc<RefCell<EventBuffer>>,
@@ -15,8 +15,8 @@ impl EventStream {
         EventStream {
             buffer: Arc::new(RefCell::new(EventBuffer {
                 events: VecDeque::new(),
-                waker: None
-            }))
+                waker: None,
+            })),
         }
     }
 
@@ -28,8 +28,7 @@ impl EventStream {
 impl Stream for EventStream {
     type Item = Event;
 
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context)
-        -> Poll<Option<Self::Item>> {
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
         let mut buffer = self.buffer.borrow_mut();
 
         match buffer.events.pop_front() {
@@ -55,5 +54,3 @@ impl EventBuffer {
         }
     }
 }
-
-

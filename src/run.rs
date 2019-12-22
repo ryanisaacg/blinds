@@ -1,21 +1,28 @@
 use crate::event::*;
-use crate::{EventBuffer, EventStream, Window, WindowContents, Settings};
-use futures_util::task::LocalSpawnExt;
+use crate::{EventBuffer, EventStream, Settings, Window, WindowContents};
 use futures_executor::LocalPool;
+use futures_util::task::LocalSpawnExt;
 use mint::Vector2;
-use std::cell::RefCell; use std::sync::Arc; use std::future::Future;
-use winit::event::{Event as WinitEvent};
+use std::cell::RefCell;
+use std::future::Future;
+use std::sync::Arc;
+use winit::event::Event as WinitEvent;
 use winit::event_loop::{ControlFlow, EventLoop};
 
 pub fn run<F, T>(settings: Settings, app: F) -> !
-        where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, EventStream) -> T {
+where
+    T: 'static + Future<Output = ()>,
+    F: 'static + FnOnce(Window, EventStream) -> T,
+{
     let stream = EventStream::new();
     let buffer = stream.buffer();
 
     let event_loop = EventLoop::new();
     let window = Arc::new(WindowContents::new(&event_loop, settings));
     let pool = LocalPool::new();
-    pool.spawner().spawn_local(app(Window(window.clone()), stream)).expect("Failed to start application");
+    pool.spawner()
+        .spawn_local(app(Window(window.clone()), stream))
+        .expect("Failed to start application");
 
     do_run(event_loop, window, pool, buffer)
 }
@@ -25,7 +32,10 @@ use glow::Context;
 
 #[cfg(feature = "gl")]
 pub fn run_gl<T, F>(settings: Settings, app: F) -> !
-        where T: 'static + Future<Output = ()>, F: 'static + FnOnce(Window, Context, EventStream) -> T {
+where
+    T: 'static + Future<Output = ()>,
+    F: 'static + FnOnce(Window, Context, EventStream) -> T,
+{
     let stream = EventStream::new();
     let buffer = stream.buffer();
 
@@ -33,12 +43,19 @@ pub fn run_gl<T, F>(settings: Settings, app: F) -> !
     let (window, ctx) = WindowContents::new_gl(&event_loop, settings);
     let window = Arc::new(window);
     let pool = LocalPool::new();
-    pool.spawner().spawn_local(app(Window(window.clone()), ctx, stream)).expect("Failed to start application");
+    pool.spawner()
+        .spawn_local(app(Window(window.clone()), ctx, stream))
+        .expect("Failed to start application");
 
     do_run(event_loop, window, pool, buffer)
 }
 
-fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: LocalPool, buffer: Arc<RefCell<EventBuffer>>) -> ! {
+fn do_run(
+    event_loop: EventLoop<()>,
+    window: Arc<WindowContents>,
+    mut pool: LocalPool,
+    buffer: Arc<RefCell<EventBuffer>>,
+) -> ! {
     #[cfg(feature = "gilrs")]
     let mut gilrs = gilrs::Gilrs::new();
 
@@ -66,7 +83,7 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
                 process_gilrs_events(&mut gilrs, &buffer);
                 finished = pool.try_run_one()
             }
-            _ => ()
+            _ => (),
         }
         if finished {
             *ctrl = ControlFlow::Exit;
@@ -75,7 +92,10 @@ fn do_run(event_loop: EventLoop<()>, window: Arc<WindowContents>, mut pool: Loca
 }
 
 #[cfg(feature = "gilrs")]
-fn process_gilrs_events(gilrs: &mut Result<gilrs::Gilrs, gilrs::Error>, buffer: &Arc<RefCell<EventBuffer>>) {
+fn process_gilrs_events(
+    gilrs: &mut Result<gilrs::Gilrs, gilrs::Error>,
+    buffer: &Arc<RefCell<EventBuffer>>,
+) {
     if let Ok(gilrs) = gilrs.as_mut() {
         while let Some(ev) = gilrs.next_event() {
             if let Some(ev) = convert_gilrs(ev) {
@@ -92,14 +112,25 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
         HiDpiFactorChanged(scale) => Event::ScaleChanged(scale as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
-        KeyboardInput { input: winit::event::KeyboardInput {
-            state, virtual_keycode: Some(key), modifiers, ..
-        }, .. } => Event::KeyboardInput {
+        KeyboardInput {
+            input:
+                winit::event::KeyboardInput {
+                    state,
+                    virtual_keycode: Some(key),
+                    modifiers,
+                    ..
+                },
+            ..
+        } => Event::KeyboardInput {
             key: key.into(),
             modifiers: modifiers.into(),
             state: state.into(),
         },
-        CursorMoved { device_id, position, modifiers } => Event::MouseMoved {
+        CursorMoved {
+            device_id,
+            position,
+            modifiers,
+        } => Event::MouseMoved {
             pointer: Pointer(device_id),
             position: lp_to_vec(position),
             modifiers: modifiers.into(),
@@ -110,18 +141,29 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
         CursorLeft { device_id } => Event::MouseLeft {
             pointer: Pointer(device_id),
         },
-        MouseWheel { device_id, delta, modifiers, .. } => Event::MouseWheel {
+        MouseWheel {
+            device_id,
+            delta,
+            modifiers,
+            ..
+        } => Event::MouseWheel {
             pointer: Pointer(device_id),
             delta: delta.into(),
-            modifiers: modifiers.into()
+            modifiers: modifiers.into(),
         },
-        MouseInput { device_id, button, state, modifiers, ..} => Event::MouseInput {
+        MouseInput {
+            device_id,
+            button,
+            state,
+            modifiers,
+            ..
+        } => Event::MouseInput {
             pointer: Pointer(device_id),
             state: state.into(),
             button: button.into(),
             modifiers: modifiers.into(),
         },
-        _ => return None
+        _ => return None,
     })
 }
 
@@ -130,23 +172,19 @@ fn convert_gilrs(event: gilrs::Event) -> Option<Event> {
     use gilrs::ev::EventType::*;
     let gilrs::Event { id, event, .. } = event;
     let event = match event {
-        ButtonPressed(btn, _) => convert_gilrs_button(btn)
-            .map(|button| GamepadEvent::Button {
-                button,
-                state: ElementState::Pressed
-            }),
+        ButtonPressed(btn, _) => convert_gilrs_button(btn).map(|button| GamepadEvent::Button {
+            button,
+            state: ElementState::Pressed,
+        }),
         ButtonRepeated(_, _) => None,
-        ButtonReleased(btn, _) => convert_gilrs_button(btn)
-            .map(|button| GamepadEvent::Button {
-                button,
-                state: ElementState::Released
-            }),
+        ButtonReleased(btn, _) => convert_gilrs_button(btn).map(|button| GamepadEvent::Button {
+            button,
+            state: ElementState::Released,
+        }),
         ButtonChanged(_, _, _) => None,
-        AxisChanged(axis, value, _) => convert_gilrs_axis(axis)
-            .map(|axis| GamepadEvent::Axis {
-                axis,
-                value
-            }),
+        AxisChanged(axis, value, _) => {
+            convert_gilrs_axis(axis).map(|axis| GamepadEvent::Axis { axis, value })
+        }
         Connected => Some(GamepadEvent::Connected),
         Disconnected => Some(GamepadEvent::Disconnected),
         Dropped => None,
@@ -199,7 +237,7 @@ fn convert_gilrs_axis(axis: gilrs::ev::Axis) -> Option<GamepadAxis> {
 fn ls_to_vec(ls: winit::dpi::LogicalSize) -> Vector2<f32> {
     Vector2 {
         x: ls.width as f32,
-        y: ls.height as f32
+        y: ls.height as f32,
     }
 }
 
