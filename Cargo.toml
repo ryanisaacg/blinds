@@ -16,10 +16,9 @@ stdweb = ["std_web", "webgl_stdweb", "winit/stdweb", "glow/stdweb"]
 web-sys = ["wasm-bindgen", "web_sys", "winit/web-sys", "glow/web-sys"]
 
 [dependencies]
-futures-core-preview = { version = "0.3.0-alpha.17", default-features = false }
-futures-util-preview = { version = "0.3.0-alpha.17", default-features = false }
-futures-executor-preview = { version = "0.3.0-alpha.17", default-features = false, features = ["std"] }
-glow = { version = "0.3.0-alpha3", default-features = false, optional = true }
+futures-util = { version = "0.3.1", default-features = false }
+futures-executor = { version = "0.3.1", default-features = false, features = ["std"] }
+glow = { version = "0.4.0", default-features = false, optional = true }
 gilrs = { version = "0.7", optional = true }
 image = { version = "0.22.3", optional = true, default-features = false }
 mint = "0.5"
