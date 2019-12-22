@@ -13,7 +13,3 @@ pub use self::run::run_gl;
 
 pub(crate) use self::event_stream::EventBuffer;
 pub(crate) use self::window::WindowContents;
-
-pub mod traits {
-    pub use futures_util::stream::StreamExt;
-}

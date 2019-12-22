@@ -78,10 +78,9 @@ fn do_run(
                 }
             }
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
-                buffer.borrow_mut().push(Event::EventsCleared);
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
-                finished = pool.try_run_one()
+                finished = pool.try_run_one();
             }
             _ => (),
         }

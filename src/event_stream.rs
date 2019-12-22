@@ -1,10 +1,11 @@
 use crate::Event;
-use futures_core::stream::Stream;
+
+use futures_util::future::poll_fn;
 use std::cell::RefCell;
 use std::collections::VecDeque;
-use std::pin::Pin;
+use std::future::Future;
 use std::sync::Arc;
-use std::task::{Context, Poll, Waker};
+use std::task::{Poll, Waker};
 
 pub struct EventStream {
     buffer: Arc<RefCell<EventBuffer>>,
@@ -16,6 +17,7 @@ impl EventStream {
             buffer: Arc::new(RefCell::new(EventBuffer {
                 events: VecDeque::new(),
                 waker: None,
+                ready: false,
             })),
         }
     }
@@ -23,27 +25,30 @@ impl EventStream {
     pub(crate) fn buffer(&self) -> Arc<RefCell<EventBuffer>> {
         self.buffer.clone()
     }
-}
 
-impl Stream for EventStream {
-    type Item = Event;
-
-    fn poll_next(self: Pin<&mut Self>, cx: &mut Context) -> Poll<Option<Self::Item>> {
-        let mut buffer = self.buffer.borrow_mut();
-
-        match buffer.events.pop_front() {
-            Some(event) => Poll::Ready(Some(event)),
-            None => {
-                buffer.waker = Some(cx.waker().clone());
-                Poll::Pending
+    pub fn next_event<'a>(&'a mut self) -> impl 'a + Future<Output = Option<Event>> {
+        poll_fn(move |cx| {
+            let mut buffer = self.buffer.borrow_mut();
+            match buffer.events.pop_front() {
+                Some(event) => Poll::Ready(Some(event)),
+                None => {
+                    if buffer.ready {
+                        buffer.ready = false;
+                        Poll::Ready(None)
+                    } else {
+                        buffer.waker = Some(cx.waker().clone());
+                        Poll::Pending
+                    }
+                }
             }
-        }
+        })
     }
 }
 
 pub(crate) struct EventBuffer {
     events: VecDeque<Event>,
     waker: Option<Waker>,
+    ready: bool,
 }
 
 impl EventBuffer {
@@ -52,5 +57,6 @@ impl EventBuffer {
         if let Some(waker) = self.waker.take() {
             waker.wake();
         }
+        self.ready = true;
     }
 }
