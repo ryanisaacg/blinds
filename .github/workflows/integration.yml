@@ -15,7 +15,7 @@ jobs:
         targets: wasm32-unknown-unknown
     - uses: actions/checkout@master
     - name: Install libudev
-      run: if [ ${{ matrix.os }} -eq 'ubuntu-latest' ]; then apt install libudev-dev end
+      run: if [ ${{ matrix.os }} -eq 'ubuntu-latest' ]; then apt install libudev-dev; end
     - name: Check formatting
       run: cargo fmt -- --check
     - name: Clippy desktop
