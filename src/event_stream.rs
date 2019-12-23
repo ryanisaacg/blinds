@@ -42,7 +42,6 @@ impl EventStream {
     /// Future even if the events are ignored.
     ///
     /// [`Event`]: Event
-    #[must_use]
     pub fn next_event<'a>(&'a mut self) -> impl 'a + Future<Output = Option<Event>> {
         poll_fn(move |cx| {
             let mut buffer = self.buffer.borrow_mut();
