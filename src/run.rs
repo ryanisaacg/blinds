@@ -16,8 +16,12 @@ use winit::event_loop::{ControlFlow, EventLoop};
 /// moment.
 ///
 /// Currently blinds only supports one window, and `settings` determines how it will be
-/// constructed. If the 'gl' feature is enabled, it will also determine some OpenGL context
-/// settings.
+/// constructed.
+///
+/// If you want a GL context, use [`run_gl`] instead. GL contexts require additional work when
+/// creating a window, and therefore are not created by defualt.
+///
+/// [`run_gl`]: run_gl
 pub fn run<F, T>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
@@ -40,6 +44,12 @@ where
 use glow::Context;
 
 #[cfg(feature = "gl")]
+/// The entry point for a blinds-based application using OpenGL
+///
+/// `run_gl` acts the same as [`run`] except it provides a [`glow`] context
+///
+/// [`run`]: run
+/// [`glow`]: glow
 pub fn run_gl<T, F>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
@@ -87,6 +97,7 @@ fn do_run(
                 }
             }
             WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
+                buffer.borrow_mut().mark_ready();
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
                 finished = pool.try_run_one();
@@ -117,7 +128,7 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ls_to_vec(ls)),
-        HiDpiFactorChanged(scale) => Event::ScaleChanged(scale as f32),
+        HiDpiFactorChanged(scale) => Event::ScaleFactorChanged(scale as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
         KeyboardInput {
