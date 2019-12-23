@@ -50,7 +50,7 @@ impl Default for Settings {
             #[cfg(feature = "image")]
             icon_path: None,
             multisampling: None,
-            vsync: false,
+            vsync: true,
             resizable: false,
             title: "",
         }
