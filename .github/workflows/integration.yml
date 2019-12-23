@@ -21,7 +21,7 @@ jobs:
       run: cargo fmt -- --check
     - name: Clippy desktop
       run: cargo clippy -- -D warnings
-    - name: Clippy stdweb
+    - name: Check stdweb
       if: matrix.os == 'macOS-latest'
       run: cargo install cargo-web && cargo web check --features stdweb
     - name: Clippy web-sys
