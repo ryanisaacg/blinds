@@ -70,13 +70,13 @@ pub(crate) struct EventBuffer {
 impl EventBuffer {
     pub fn push(&mut self, event: Event) {
         self.events.push_back(event);
-        if let Some(waker) = self.waker.take() {
-            waker.wake();
-        }
-        self.ready = true;
+        self.mark_ready();
     }
 
     pub fn mark_ready(&mut self) {
+        if let Some(waker) = self.waker.take() {
+            waker.wake();
+        }
         self.ready = true;
     }
 }
