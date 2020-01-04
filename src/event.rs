@@ -70,10 +70,10 @@ pub struct Modifiers {
 impl From<winit::event::ModifiersState> for Modifiers {
     fn from(modifiers: winit::event::ModifiersState) -> Modifiers {
         Modifiers {
-            shift: modifiers.shift,
-            ctrl: modifiers.ctrl,
-            alt: modifiers.alt,
-            logo: modifiers.logo,
+            shift: modifiers.shift(),
+            ctrl: modifiers.ctrl(),
+            alt: modifiers.alt(),
+            logo: modifiers.logo(),
         }
     }
 }

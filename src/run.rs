@@ -96,7 +96,7 @@ fn do_run(
                     buffer.borrow_mut().push(event);
                 }
             }
-            WinitEvent::LoopDestroyed | WinitEvent::EventsCleared => {
+            WinitEvent::LoopDestroyed | WinitEvent::MainEventsCleared => {
                 buffer.borrow_mut().mark_ready();
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
