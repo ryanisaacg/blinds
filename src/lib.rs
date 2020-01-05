@@ -26,7 +26,10 @@ mod event_stream;
 mod run;
 mod window;
 
-pub use self::event::{Event, Modifiers, ElementState, Pointer, MouseButton, MouseScrollDelta, Key, GamepadId, GamepadEvent, GamepadButton, GamepadAxis};
+pub use self::event::{
+    ElementState, Event, GamepadAxis, GamepadButton, GamepadEvent, GamepadId, Key, Modifiers,
+    MouseButton, MouseScrollDelta, Pointer,
+};
 pub use self::event_stream::EventStream;
 pub use self::run::run;
 pub use self::window::{CursorIcon, Settings, Window};
