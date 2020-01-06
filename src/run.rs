@@ -92,7 +92,12 @@ fn do_run(
                 if let winit::event::WindowEvent::Resized(size) = &event {
                     window.resize(size);
                 }
-                if let Some(event) = convert_winit(event) {
+                if let Some(event) = convert_winit_window(event) {
+                    buffer.borrow_mut().push(event);
+                }
+            }
+            WinitEvent::DeviceEvent { event, .. } => {
+                if let Some(event) = convert_winit_device(event) {
                     buffer.borrow_mut().push(event);
                 }
             }
@@ -124,11 +129,21 @@ fn process_gilrs_events(
     }
 }
 
-fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
+fn convert_winit_device(event: winit::event::DeviceEvent) -> Option<Event> {
+    use winit::event::DeviceEvent::*;
+    Some(match event {
+        ModifiersChanged(state) => Event::ModifiersChanged {
+            modifiers: state.into(),
+        },
+        _ => return None,
+    })
+}
+
+fn convert_winit_window(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ps_to_vec(ls)),
-        ScaleFactorChanged{scale_factor, new_inner_size} => Event::ScaleFactorChanged(scale_factor as f32),
+        ScaleFactorChanged { scale_factor, .. } => Event::ScaleFactorChanged(scale_factor as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
         KeyboardInput {
@@ -136,23 +151,20 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
                 winit::event::KeyboardInput {
                     state,
                     virtual_keycode: Some(key),
-                    modifiers,
                     ..
                 },
             ..
         } => Event::KeyboardInput {
             key: key.into(),
-            modifiers: modifiers.into(),
             state: state.into(),
         },
         CursorMoved {
             device_id,
             position,
-            modifiers,
+            ..
         } => Event::MouseMoved {
             pointer: Pointer(device_id),
             position: pp_to_vec(position),
-            modifiers: modifiers.into(),
         },
         CursorEntered { device_id } => Event::MouseEntered {
             pointer: Pointer(device_id),
@@ -161,26 +173,20 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
             pointer: Pointer(device_id),
         },
         MouseWheel {
-            device_id,
-            delta,
-            modifiers,
-            ..
+            device_id, delta, ..
         } => Event::MouseWheel {
             pointer: Pointer(device_id),
             delta: delta.into(),
-            modifiers: modifiers.into(),
         },
         MouseInput {
             device_id,
             button,
             state,
-            modifiers,
             ..
         } => Event::MouseInput {
             pointer: Pointer(device_id),
             state: state.into(),
             button: button.into(),
-            modifiers: modifiers.into(),
         },
         _ => return None,
     })

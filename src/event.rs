@@ -25,11 +25,7 @@ pub enum Event {
     ///
     /// Operating systems often have key repeat settings that cause duplicate events to be
     /// generated for a single press.
-    KeyboardInput {
-        key: Key,
-        modifiers: Modifiers,
-        state: ElementState,
-    },
+    KeyboardInput { key: Key, state: ElementState },
     /// A given pointer has entered the window
     MouseEntered { pointer: Pointer },
     /// A given pointer has left the window
@@ -38,21 +34,22 @@ pub enum Event {
     MouseMoved {
         pointer: Pointer,
         position: Vector2<f32>,
-        modifiers: Modifiers,
     },
     /// The mousewheel has scrolled, either in lines or pixels (depending on the input method)
     MouseWheel {
         pointer: Pointer,
         delta: MouseScrollDelta,
-        modifiers: Modifiers,
     },
     /// A mouse button has been pressed or released
     MouseInput {
         pointer: Pointer,
         state: ElementState,
         button: MouseButton,
-        modifiers: Modifiers,
     },
+
+    /// The keyboard modifiers have changed.
+    ModifiersChanged { modifiers: Modifiers },
+
     /// A gamepad button has been pressed or released, or an axis has changed
     GamepadEvent { id: GamepadId, event: GamepadEvent },
 }
