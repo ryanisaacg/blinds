@@ -127,8 +127,8 @@ fn process_gilrs_events(
 fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
-        Resized(ls) => Event::Resized(ls_to_vec(ls)),
-        HiDpiFactorChanged(scale) => Event::ScaleFactorChanged(scale as f32),
+        Resized(ls) => Event::Resized(ps_to_vec(ls)),
+        ScaleFactorChanged{scale_factor, new_inner_size} => Event::ScaleFactorChanged(scale_factor as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
         KeyboardInput {
@@ -151,7 +151,7 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
             modifiers,
         } => Event::MouseMoved {
             pointer: Pointer(device_id),
-            position: lp_to_vec(position),
+            position: pp_to_vec(position),
             modifiers: modifiers.into(),
         },
         CursorEntered { device_id } => Event::MouseEntered {
@@ -253,16 +253,16 @@ fn convert_gilrs_axis(axis: gilrs::ev::Axis) -> Option<GamepadAxis> {
     })
 }
 
-fn ls_to_vec(ls: winit::dpi::LogicalSize) -> Vector2<f32> {
+fn ps_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalSize<P>) -> Vector2<f32> {
     Vector2 {
-        x: ls.width as f32,
-        y: ls.height as f32,
+        x: ls.width.cast(),
+        y: ls.height.cast(),
     }
 }
 
-fn lp_to_vec(ls: winit::dpi::LogicalPosition) -> Vector2<f32> {
+fn pp_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>) -> Vector2<f32> {
     Vector2 {
-        x: ls.x as f32,
-        y: ls.y as f32,
+        x: ls.x.cast(),
+        y: ls.y.cast(),
     }
 }
