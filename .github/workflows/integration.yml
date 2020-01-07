@@ -28,7 +28,7 @@ jobs:
       run: cargo install cargo-web && cargo web check --features stdweb
     - name: Check stdweb with GL enabled
       if: matrix.os == 'macOS-latest'
-      run: cargo install cargo-web && cargo web check --features stdweb,gl
+      run: cargo web check --features stdweb,gl
     - name: Clippy web-sys
       if: matrix.os == 'macOS-latest'
       run: cargo clippy --target wasm32-unknown-unknown --features web-sys -- -D warnings
