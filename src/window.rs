@@ -281,7 +281,7 @@ impl WindowContents {
         ));
     }
 
-    pub(crate) fn resize<P: winit::dpi::Pixel>(&self, _size: &PhysicalSize<P>) {
+    pub(crate) fn resize(&self, _size: PhysicalSize<u32>) {
         #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
         self.window.resize(_size);
     }

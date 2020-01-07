@@ -90,7 +90,7 @@ fn do_run(
                     *ctrl = ControlFlow::Exit;
                 }
                 if let winit::event::WindowEvent::Resized(size) = &event {
-                    window.resize(size);
+                    window.resize(*size);
                 }
                 if let Some(event) = convert_winit_window(event) {
                     buffer.borrow_mut().push(event);
