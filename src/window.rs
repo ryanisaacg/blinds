@@ -4,7 +4,7 @@ use glow::Context;
 use glutin::{PossiblyCurrent, WindowedContext};
 use mint::Vector2;
 use std::sync::Arc;
-use winit::dpi::LogicalSize;
+use winit::dpi::PhysicalSize;
 use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
 use winit::window::{Fullscreen, Window as WinitWindow, WindowBuilder};
@@ -160,7 +160,7 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
     #[cfg(not(feature = "image"))]
     let icon = None;
     WindowBuilder::new()
-        .with_inner_size(LogicalSize {
+        .with_inner_size(PhysicalSize {
             width: settings.size.x as f64,
             height: settings.size.y as f64,
         })
@@ -260,7 +260,7 @@ impl WindowContents {
     }
 
     pub fn set_size(&self, size: Vector2<f32>) {
-        self.window().set_inner_size(LogicalSize {
+        self.window().set_inner_size(PhysicalSize {
             width: size.x as f64,
             height: size.y as f64,
         });
@@ -277,10 +277,9 @@ impl WindowContents {
         ));
     }
 
-    pub(crate) fn resize(&self, _size: &LogicalSize) {
+    pub(crate) fn resize<P: winit::dpi::Pixel>(&self, _size: &PhysicalSize<P>) {
         #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
-        self.window
-            .resize(_size.to_physical(self.window.window().hidpi_factor()));
+        self.window.resize(_size);
     }
 
     #[cfg(feature = "gl")]
@@ -290,7 +289,7 @@ impl WindowContents {
     }
 
     pub fn scale(&self) -> f32 {
-        self.window().hidpi_factor() as f32
+        self.window().scale_factor() as f32
     }
 
     #[inline]

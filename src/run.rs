@@ -92,7 +92,12 @@ fn do_run(
                 if let winit::event::WindowEvent::Resized(size) = &event {
                     window.resize(size);
                 }
-                if let Some(event) = convert_winit(event) {
+                if let Some(event) = convert_winit_window(event) {
+                    buffer.borrow_mut().push(event);
+                }
+            }
+            WinitEvent::DeviceEvent { event, .. } => {
+                if let Some(event) = convert_winit_device(event) {
                     buffer.borrow_mut().push(event);
                 }
             }
@@ -124,11 +129,21 @@ fn process_gilrs_events(
     }
 }
 
-fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
+fn convert_winit_device(event: winit::event::DeviceEvent) -> Option<Event> {
+    use winit::event::DeviceEvent::*;
+    Some(match event {
+        ModifiersChanged(state) => Event::ModifiersChanged {
+            modifiers: state.into(),
+        },
+        _ => return None,
+    })
+}
+
+fn convert_winit_window(event: winit::event::WindowEvent) -> Option<Event> {
     use winit::event::WindowEvent::*;
     Some(match event {
-        Resized(ls) => Event::Resized(ls_to_vec(ls)),
-        HiDpiFactorChanged(scale) => Event::ScaleFactorChanged(scale as f32),
+        Resized(ls) => Event::Resized(ps_to_vec(ls)),
+        ScaleFactorChanged { scale_factor, .. } => Event::ScaleFactorChanged(scale_factor as f32),
         ReceivedCharacter(c) => Event::ReceivedCharacter(c),
         Focused(f) => Event::Focused(f),
         KeyboardInput {
@@ -136,23 +151,20 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
                 winit::event::KeyboardInput {
                     state,
                     virtual_keycode: Some(key),
-                    modifiers,
                     ..
                 },
             ..
         } => Event::KeyboardInput {
             key: key.into(),
-            modifiers: modifiers.into(),
             state: state.into(),
         },
         CursorMoved {
             device_id,
             position,
-            modifiers,
+            ..
         } => Event::MouseMoved {
             pointer: Pointer(device_id),
-            position: lp_to_vec(position),
-            modifiers: modifiers.into(),
+            position: pp_to_vec(position),
         },
         CursorEntered { device_id } => Event::MouseEntered {
             pointer: Pointer(device_id),
@@ -161,26 +173,20 @@ fn convert_winit(event: winit::event::WindowEvent) -> Option<Event> {
             pointer: Pointer(device_id),
         },
         MouseWheel {
-            device_id,
-            delta,
-            modifiers,
-            ..
+            device_id, delta, ..
         } => Event::MouseWheel {
             pointer: Pointer(device_id),
             delta: delta.into(),
-            modifiers: modifiers.into(),
         },
         MouseInput {
             device_id,
             button,
             state,
-            modifiers,
             ..
         } => Event::MouseInput {
             pointer: Pointer(device_id),
             state: state.into(),
             button: button.into(),
-            modifiers: modifiers.into(),
         },
         _ => return None,
     })
@@ -253,16 +259,16 @@ fn convert_gilrs_axis(axis: gilrs::ev::Axis) -> Option<GamepadAxis> {
     })
 }
 
-fn ls_to_vec(ls: winit::dpi::LogicalSize) -> Vector2<f32> {
+fn ps_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalSize<P>) -> Vector2<f32> {
     Vector2 {
-        x: ls.width as f32,
-        y: ls.height as f32,
+        x: ls.width.cast(),
+        y: ls.height.cast(),
     }
 }
 
-fn lp_to_vec(ls: winit::dpi::LogicalPosition) -> Vector2<f32> {
+fn pp_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>) -> Vector2<f32> {
     Vector2 {
-        x: ls.x as f32,
-        y: ls.y as f32,
+        x: ls.x.cast(),
+        y: ls.y.cast(),
     }
 }
