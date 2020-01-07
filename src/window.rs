@@ -159,10 +159,13 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
     });
     #[cfg(not(feature = "image"))]
     let icon = None;
+
+    let scale = el.primary_monitor().scale_factor();
+
     WindowBuilder::new()
         .with_inner_size(PhysicalSize {
-            width: settings.size.x as f64,
-            height: settings.size.y as f64,
+            width: settings.size.x as f64 * scale,
+            height: settings.size.y as f64 * scale,
         })
         .with_resizable(settings.resizable)
         .with_fullscreen(fullscreen_convert(
@@ -260,9 +263,10 @@ impl WindowContents {
     }
 
     pub fn set_size(&self, size: Vector2<f32>) {
+        let scale = self.window().scale_factor();
         self.window().set_inner_size(PhysicalSize {
-            width: size.x as f64,
-            height: size.y as f64,
+            width: size.x as f64 * scale,
+            height: size.y as f64 * scale,
         });
     }
 
