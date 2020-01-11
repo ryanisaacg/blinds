@@ -4,7 +4,7 @@ use glow::Context;
 use glutin::{PossiblyCurrent, WindowedContext};
 use mint::Vector2;
 use std::sync::Arc;
-use winit::dpi::PhysicalSize;
+use winit::dpi::{LogicalSize, PhysicalSize};
 use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
 use winit::window::{Fullscreen, Window as WinitWindow, WindowBuilder};
@@ -256,6 +256,7 @@ impl WindowContents {
 
     pub fn size(&self) -> Vector2<f32> {
         let size = self.window().inner_size();
+        let size: LogicalSize<f64> = size.to_logical(self.window().scale_factor());
         Vector2 {
             x: size.width as f32,
             y: size.height as f32,
@@ -264,10 +265,13 @@ impl WindowContents {
 
     pub fn set_size(&self, size: Vector2<f32>) {
         let scale = self.window().scale_factor();
-        self.window().set_inner_size(PhysicalSize {
-            width: size.x as f64 * scale,
-            height: size.y as f64 * scale,
-        });
+        self.window().set_inner_size(
+            LogicalSize {
+                width: size.x as f64,
+                height: size.y as f64,
+            }
+            .to_physical::<f64>(scale),
+        );
     }
 
     pub fn set_title(&self, title: &str) {
@@ -323,9 +327,9 @@ impl Window {
 
     /// The DPI scale factor of the window
     ///
-    /// For a good example of DPI scale factors, see the [`winit docs`] on the subject
+    /// For a good example of DPI scale factors, see the [winit docs] on the subject
     ///
-    /// [`winit docs`]: winit::dpi
+    /// [winit docs]: winit::dpi
     pub fn scale_factor(&self) -> f32 {
         self.0.scale()
     }
