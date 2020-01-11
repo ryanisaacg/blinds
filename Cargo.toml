@@ -10,6 +10,9 @@ edition = "2018"
 readme = "README.md"
 repository = "https://github.com/ryanisaacg/blinds"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [features]
 default = ["favicon", "gamepad"]
 
