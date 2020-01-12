@@ -1,5 +1,5 @@
 use crate::event::*;
-use crate::{EventBuffer, EventStream, Settings, Window, WindowContents};
+use crate::{EventBuffer, EventContext, EventStream, Settings, Window, WindowContents};
 use futures_executor::LocalPool;
 use futures_util::task::LocalSpawnExt;
 use mint::Vector2;
@@ -25,7 +25,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 pub fn run<F, T>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
-    F: 'static + FnOnce(Window, EventStream) -> T,
+    F: 'static + FnOnce(Window, EventStream<Event>) -> T,
 {
     let stream = EventStream::new();
     let buffer = stream.buffer();
@@ -37,6 +37,30 @@ where
         .spawn_local(app(Window(window.clone()), stream))
         .expect("Failed to start application");
 
+    do_run(event_loop, window, pool, buffer)
+}
+
+// Prototype entry point supporting custom events and tasks
+pub fn run_custom<F, T, E>(settings: Settings, app: F) -> !
+where
+    T: 'static + Future<Output = ()>,
+    F: 'static + FnOnce(Window, EventContext<E>) -> T,
+    E: 'static + From<Event>,
+{
+    let stream = EventStream::new();
+    let buffer = stream.buffer();
+
+    let event_loop = EventLoop::new();
+    let window = Arc::new(WindowContents::new(&event_loop, settings));
+    let pool = LocalPool::new();
+
+    // FIXME: setup a new() function
+    let spawner = pool.spawner();
+    let context = EventContext { stream, spawner };
+    pool.spawner()
+        .spawn_local(app(Window(window.clone()), context))
+        .expect("Failed to start application");
+    
     do_run(event_loop, window, pool, buffer)
 }
 
@@ -69,12 +93,12 @@ where
     do_run(event_loop, window, pool, buffer)
 }
 
-fn do_run(
+fn do_run<E>(
     event_loop: EventLoop<()>,
     window: Arc<WindowContents>,
     mut pool: LocalPool,
-    buffer: Arc<RefCell<EventBuffer>>,
-) -> ! {
+    buffer: Arc<RefCell<EventBuffer<E>>>,
+) -> ! where E: 'static + From<Event> {
     #[cfg(feature = "gilrs")]
     let mut gilrs = gilrs::Gilrs::new();
 
@@ -93,12 +117,12 @@ fn do_run(
                     window.resize(*size);
                 }
                 if let Some(event) = convert_winit_window(event) {
-                    buffer.borrow_mut().push(event);
+                    buffer.borrow_mut().push(event.into());
                 }
             }
             WinitEvent::DeviceEvent { event, .. } => {
                 if let Some(event) = convert_winit_device(event) {
-                    buffer.borrow_mut().push(event);
+                    buffer.borrow_mut().push(event.into());
                 }
             }
             WinitEvent::LoopDestroyed | WinitEvent::MainEventsCleared => {
@@ -116,14 +140,14 @@ fn do_run(
 }
 
 #[cfg(feature = "gilrs")]
-fn process_gilrs_events(
+fn process_gilrs_events<E>(
     gilrs: &mut Result<gilrs::Gilrs, gilrs::Error>,
-    buffer: &Arc<RefCell<EventBuffer>>,
-) {
+    buffer: &Arc<RefCell<EventBuffer<E>>>,
+) where E: From<Event> {
     if let Ok(gilrs) = gilrs.as_mut() {
         while let Some(ev) = gilrs.next_event() {
             if let Some(ev) = convert_gilrs(ev) {
-                buffer.borrow_mut().push(ev);
+                buffer.borrow_mut().push(ev.into());
             }
         }
     }

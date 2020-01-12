@@ -22,6 +22,7 @@
 //! [`Window`]: Window
 //! [`EventStream`]: EventStream
 mod event;
+mod event_context;
 mod event_stream;
 mod run;
 mod window;
@@ -30,8 +31,9 @@ pub use self::event::{
     ElementState, Event, GamepadAxis, GamepadButton, GamepadEvent, GamepadId, Key, Modifiers,
     MouseButton, MouseScrollDelta, Pointer,
 };
+pub use self::event_context::EventContext;
 pub use self::event_stream::EventStream;
-pub use self::run::run;
+pub use self::run::{run, run_custom};
 pub use self::window::{CursorIcon, Settings, Window};
 
 #[cfg(feature = "gl")]

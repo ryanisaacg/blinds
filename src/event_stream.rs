@@ -1,4 +1,3 @@
-use crate::Event;
 
 use futures_util::future::poll_fn;
 use std::cell::RefCell;
@@ -15,12 +14,12 @@ use std::task::{Poll, Waker};
 /// [`next_event`]: EventStream::next_event
 /// [`Event`]: Event
 /// [`run`]: crate::run()
-pub struct EventStream {
-    buffer: Arc<RefCell<EventBuffer>>,
+pub struct EventStream<E> {
+    buffer: Arc<RefCell<EventBuffer<E>>>,
 }
 
-impl EventStream {
-    pub(crate) fn new() -> EventStream {
+impl<E> EventStream<E> {
+    pub(crate) fn new() -> Self {
         EventStream {
             buffer: Arc::new(RefCell::new(EventBuffer {
                 events: VecDeque::new(),
@@ -30,19 +29,19 @@ impl EventStream {
         }
     }
 
-    pub(crate) fn buffer(&self) -> Arc<RefCell<EventBuffer>> {
+    pub(crate) fn buffer(&self) -> Arc<RefCell<EventBuffer<E>>> {
         self.buffer.clone()
     }
 
-    /// Returns a future that will provide the next [`Event`], or None if the events are exhausted
+    /// Returns a future that will provide the next [`E`], or None if the events are exhausted
     ///
     /// If there are no events, the Future will wait until new events are received, allowing the OS
     /// or browser to take back control of the event loop. If this doesn't get run, desktop windows
     /// will freeze and browser windows will lock up, so it's important to call and `.await` the
     /// Future even if the events are ignored.
     ///
-    /// [`Event`]: Event
-    pub fn next_event<'a>(&'a mut self) -> impl 'a + Future<Output = Option<Event>> {
+    /// [`E`]: Event
+    pub fn next_event<'a>(&'a mut self) -> impl 'a + Future<Output = Option<E>> {
         poll_fn(move |cx| {
             let mut buffer = self.buffer.borrow_mut();
             match buffer.events.pop_front() {
@@ -61,14 +60,14 @@ impl EventStream {
     }
 }
 
-pub(crate) struct EventBuffer {
-    events: VecDeque<Event>,
+pub(crate) struct EventBuffer<E> {
+    events: VecDeque<E>,
     waker: Option<Waker>,
     ready: bool,
 }
 
-impl EventBuffer {
-    pub fn push(&mut self, event: Event) {
+impl <E> EventBuffer<E> {
+    pub fn push(&mut self, event: E) {
         self.events.push_back(event);
         self.mark_ready();
     }

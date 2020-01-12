@@ -1,23 +1,21 @@
 extern crate platter;
 
-use blinds::{run, Event, EventStream, Key, Settings, Window};
+use blinds::{run_custom, Event as BlindsEvent, EventContext, Settings, Window};
 
-use platter::load_file;
-use std::future::Future;
-use std::string::String;
+#[derive(Debug)]
+enum MyEvent {
+    Blinds(BlindsEvent)
+}
+
+impl From<BlindsEvent> for MyEvent{
+    fn from(e: BlindsEvent) -> Self { MyEvent::Blinds(e) }
+}
 
 fn main() {
-    run(Settings::default(), app);
+    run_custom(Settings::default(), app);
 }
 
-#[cfg(target_arch = "wasm32")]
-async fn echo_request() -> Result<String> {
-    let url = "https://postman-echo.com/get?foo1=bar1";
-    let response = load_file(url).await?;
-    Ok(format!("Response payload: {} bytes", response.len()))
-}
-
-async fn app(_window: Window, mut events: EventStream) {
+async fn app(_window: Window, mut events: EventContext<MyEvent>) {
     
     // Kick off an inialization task, and block on its result
     
@@ -27,7 +25,7 @@ async fn app(_window: Window, mut events: EventStream) {
 
     loop {
         
-        while let Some(ev) = events.next_event().await {
+        while let Some(ev) = events.stream.next_event().await {
             println!("Got event: {:?}", ev)
             // Kick off a new task every time you press a certain key (maybe only one pending at once)
         }
