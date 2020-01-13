@@ -133,13 +133,13 @@ fn do_run<E>(
             }
             _ => (),
         }
-        if finished {
-            // This is a bug; now that I've spawned other stuff, when one of those
-            // other tasks finishes, blinds thinks that the main loop exited. I will
-            // need to check ~which~ task completed, or something
-            println!("finished...");
-            *ctrl = ControlFlow::Exit;
-        }
+        // if finished {
+        //     // This is a bug; now that I've spawned other stuff, when one of those
+        //     // other tasks finishes, blinds thinks that the main loop exited. I will
+        //     // need to check ~which~ task completed, or something
+        //     println!("finished...");
+        //     *ctrl = ControlFlow::Exit;
+        // }
     })
 }
 

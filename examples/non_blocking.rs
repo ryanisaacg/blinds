@@ -1,7 +1,7 @@
 extern crate platter;
 extern crate async_std;
 
-use blinds::{run_custom, Event as BlindsEvent, EventContext, Settings, Window};
+use blinds::{run_custom, Event as BlindsEvent, EventContext, Settings, Window, Key};
 use platter::load_file;
 use async_std::task::sleep;
 use std::time::Duration;
@@ -30,7 +30,7 @@ async fn tick_loop(context: EventContext<MyEvent>) {
     }
 }
 
-async fn app(_window: Window, mut context: EventContext<MyEvent>) {
+async fn app(window: Window, mut context: EventContext<MyEvent>) {
     
     // Start a long-running "background" task
     context.spawn(tick_loop);
@@ -41,10 +41,19 @@ async fn app(_window: Window, mut context: EventContext<MyEvent>) {
         inner_context.dispatch(MyEvent::AssetReady)
     });
 
-    loop {
+    'outer: loop {
         
         while let Some(ev) = context.stream.next_event().await {
-            println!("Got event: {:?}", ev)
+            println!("Got event: {:?}", ev);
+
+            if let MyEvent::Blinds(BlindsEvent::KeyboardInput {
+                key: Key::Escape, ..
+            }) = ev
+            {
+                // window.
+                break 'outer;
+            }
+
             // TODO: Kick off a new task every time you press a certain key (maybe only one pending at once)
         }
 
