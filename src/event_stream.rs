@@ -18,6 +18,13 @@ pub struct EventStream<E> {
     buffer: Arc<RefCell<EventBuffer<E>>>,
 }
 
+// All of these custom Clone are smelly
+impl<E> Clone for EventStream<E> {
+    fn clone(&self) -> Self {
+        EventStream { buffer: self.buffer() }
+    }
+}
+
 impl<E> EventStream<E> {
     pub(crate) fn new() -> Self {
         EventStream {
