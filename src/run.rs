@@ -33,6 +33,7 @@ where
     let event_loop = EventLoop::new();
     let window = Arc::new(WindowContents::new(&event_loop, settings));
 
+    // FIXME these next few lines here are not DRY; refactor?
     let finished = Arc::new(RefCell::new(false));
     let app_notify = || {
         let window = window.clone();
@@ -52,6 +53,7 @@ where
 }
 
 // Prototype entry point supporting custom events and tasks
+// TODO: public function needs documentation
 pub fn run_custom<F, T, E>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
@@ -138,6 +140,7 @@ where
     #[cfg(feature = "gilrs")]
     let mut gilrs = gilrs::Gilrs::new();
 
+    // Would it be better to use run_until_stalled here?
     pool.try_run_one();
 
     event_loop.run(move |event, _, ctrl| {
@@ -165,6 +168,7 @@ where
                 buffer.borrow_mut().mark_ready();
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
+                // Would it be better to use run_until_stalled here?
                 pool.try_run_one();
             }
             _ => (),

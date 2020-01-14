@@ -26,7 +26,6 @@ fn main() {
 }
 
 async fn tick_loop(context: EventContext<MyEvent>) {
-    // some sort of sleep would be nice
     loop {
         println!("Ticking");
         (&context).dispatch(MyEvent::Ticked);
@@ -68,7 +67,7 @@ async fn app(_window: Window, mut context: EventContext<MyEvent>) {
                 key: Key::Space, ..
             }) = ev
             {
-                // Start a first-party
+                // Start a first-party handler, which eventually notifies a first-party event on completion
                 context.spawn(button_handler);
             }
         }

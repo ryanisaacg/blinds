@@ -11,7 +11,7 @@ async fn app(_window: Window, mut events: EventStream<Event>) {
                 key: Key::Escape, ..
             } = ev
             {
-                break 'outer; // this now stop working because the main loop
+                break 'outer;
             }
             println!("{:?}", ev);
         }

@@ -12,9 +12,10 @@ async fn app(_window: Window, _ctx: Context, mut events: EventStream<Event>) {
                 key: Key::Escape, ..
             } = ev
             {
-                break 'outer; // this now stop working because the main loop
+                break 'outer;
             }
             println!("{:?}", ev);
         }
+        // TODO: use the glow context for something basic
     }
 }

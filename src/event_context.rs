@@ -3,7 +3,6 @@ use futures_executor::LocalSpawner;
 use futures_util::task::LocalSpawnExt;
 use std::future::Future;
 
-// FIXME: struct fields shouldn't be public
 // #[derive(Clone)]
 pub struct EventContext<E> {
     spawner: LocalSpawner,
@@ -20,14 +19,12 @@ impl<E> Clone for EventContext<E> {
     }
 }
 
-// TODO: should probably start using Result more frquently?
-// is the explicit lifetime parameter necessary here?
-impl<'a, E> EventContext<E> {
+impl<E> EventContext<E> {
     pub fn new(spawner: LocalSpawner, stream: EventStream<E>) -> Self {
         EventContext { spawner, stream }
     }
 
-    pub fn spawn<F, T>(&'a self, task: F)
+    pub fn spawn<F, T>(&self, task: F)
     where
         T: 'static + Future<Output = ()>,
         F: 'static + FnOnce(EventContext<E>) -> T,
@@ -42,7 +39,7 @@ impl<'a, E> EventContext<E> {
         &mut self.stream
     }
 
-    pub fn dispatch(&'a self, event: E) {
+    pub fn dispatch(&self, event: E) {
         self.stream.buffer().borrow_mut().push(event)
     }
 }
