@@ -38,3 +38,5 @@ jobs:
       run: cargo clippy --target wasm32-unknown-unknown --features web-sys,gl -- -D warnings
     - name: Examples
       run: cargo check --examples
+    - name: Examples with GL enabled
+      run: cargo check --examples --features gl
