@@ -1,4 +1,3 @@
-
 use futures_util::future::poll_fn;
 use std::cell::RefCell;
 use std::collections::VecDeque;
@@ -21,7 +20,9 @@ pub struct EventStream<E> {
 // All of these custom Clone are smelly
 impl<E> Clone for EventStream<E> {
     fn clone(&self) -> Self {
-        EventStream { buffer: self.buffer() }
+        EventStream {
+            buffer: self.buffer(),
+        }
     }
 }
 
@@ -73,7 +74,7 @@ pub(crate) struct EventBuffer<E> {
     ready: bool,
 }
 
-impl <E> EventBuffer<E> {
+impl<E> EventBuffer<E> {
     pub fn push(&mut self, event: E) {
         self.events.push_back(event);
         self.mark_ready();

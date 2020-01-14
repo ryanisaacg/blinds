@@ -32,12 +32,23 @@ where
 
     let event_loop = EventLoop::new();
     let window = Arc::new(WindowContents::new(&event_loop, settings));
+
+    let finished = Arc::new(RefCell::new(false));
+    let app_notify = || {
+        let window = window.clone();
+        let finished = finished.clone();
+        async move {
+            app(Window(window), stream).await;
+            *finished.borrow_mut() = true;
+        }
+    };
+
     let pool = LocalPool::new();
     pool.spawner()
-        .spawn_local(app(Window(window.clone()), stream))
+        .spawn_local(app_notify())
         .expect("Failed to start application");
 
-    do_run(event_loop, window, pool, buffer)
+    do_run(event_loop, window, pool, buffer, finished)
 }
 
 // Prototype entry point supporting custom events and tasks
@@ -52,16 +63,26 @@ where
 
     let event_loop = EventLoop::new();
     let window = Arc::new(WindowContents::new(&event_loop, settings));
-    let pool = LocalPool::new();
 
-    // FIXME: setup a new() function
+    let pool = LocalPool::new();
     let spawner = pool.spawner();
-    let context = EventContext { stream, spawner };
+    let context = EventContext::new(spawner, stream);
+
+    let finished = Arc::new(RefCell::new(false));
+    let app_notify = || {
+        let window = window.clone();
+        let finished = finished.clone();
+        async move {
+            app(Window(window), context).await;
+            *finished.borrow_mut() = true;
+        }
+    };
+
     pool.spawner()
-        .spawn_local(app(Window(window.clone()), context))
+        .spawn_local(app_notify())
         .expect("Failed to start application");
-    
-    do_run(event_loop, window, pool, buffer)
+
+    do_run(event_loop, window, pool, buffer, finished)
 }
 
 #[cfg(feature = "gl")]
@@ -77,7 +98,7 @@ use glow::Context;
 pub fn run_gl<T, F>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
-    F: 'static + FnOnce(Window, Context, EventStream) -> T,
+    F: 'static + FnOnce(Window, Context, EventStream<Event>) -> T,
 {
     let stream = EventStream::new();
     let buffer = stream.buffer();
@@ -85,12 +106,23 @@ where
     let event_loop = EventLoop::new();
     let (window, ctx) = WindowContents::new_gl(&event_loop, settings);
     let window = Arc::new(window);
+
+    let finished = Arc::new(RefCell::new(false));
+    let app_notify = || {
+        let window = window.clone();
+        let finished = finished.clone();
+        async move {
+            app(Window(window), ctx, stream).await;
+            *finished.borrow_mut() = true;
+        }
+    };
+
     let pool = LocalPool::new();
     pool.spawner()
-        .spawn_local(app(Window(window.clone()), ctx, stream))
+        .spawn_local(app_notify())
         .expect("Failed to start application");
 
-    do_run(event_loop, window, pool, buffer)
+    do_run(event_loop, window, pool, buffer, finished)
 }
 
 fn do_run<E>(
@@ -98,11 +130,15 @@ fn do_run<E>(
     window: Arc<WindowContents>,
     mut pool: LocalPool,
     buffer: Arc<RefCell<EventBuffer<E>>>,
-) -> ! where E: 'static + From<Event> {
+    finished: Arc<RefCell<bool>>,
+) -> !
+where
+    E: 'static + From<Event>,
+{
     #[cfg(feature = "gilrs")]
     let mut gilrs = gilrs::Gilrs::new();
 
-    let mut finished = pool.try_run_one();
+    pool.try_run_one();
 
     event_loop.run(move |event, _, ctrl| {
         match event {
@@ -129,17 +165,14 @@ fn do_run<E>(
                 buffer.borrow_mut().mark_ready();
                 #[cfg(feature = "gilrs")]
                 process_gilrs_events(&mut gilrs, &buffer);
-                finished = pool.try_run_one();
+                pool.try_run_one();
             }
             _ => (),
         }
-        // if finished {
-        //     // This is a bug; now that I've spawned other stuff, when one of those
-        //     // other tasks finishes, blinds thinks that the main loop exited. I will
-        //     // need to check ~which~ task completed, or something
-        //     println!("finished...");
-        //     *ctrl = ControlFlow::Exit;
-        // }
+        if *finished.borrow() {
+            println!("finished...");
+            *ctrl = ControlFlow::Exit;
+        }
     })
 }
 
@@ -147,7 +180,9 @@ fn do_run<E>(
 fn process_gilrs_events<E>(
     gilrs: &mut Result<gilrs::Gilrs, gilrs::Error>,
     buffer: &Arc<RefCell<EventBuffer<E>>>,
-) where E: From<Event> {
+) where
+    E: From<Event>,
+{
     if let Ok(gilrs) = gilrs.as_mut() {
         while let Some(ev) = gilrs.next_event() {
             if let Some(ev) = convert_gilrs(ev) {
