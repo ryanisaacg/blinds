@@ -1,3 +1,4 @@
+// Use the 'select' function to run a Future in parallel to the event loop
 use blinds::{run, EventStream, Settings, Window};
 use futures_util::future::{Either, join_all, ready, select};
 
