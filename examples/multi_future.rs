@@ -1,6 +1,6 @@
 // Use the 'select' function to run a Future in parallel to the event loop
 use blinds::{run, EventStream, Settings, Window};
-use futures_util::future::{Either, join_all, ready, select};
+use futures_util::future::{join_all, ready, select, Either};
 
 fn main() {
     run(Settings::default(), app);
@@ -11,7 +11,7 @@ async fn app(_window: Window, mut events: EventStream) {
         ready("Resource A!"),
         ready("Resource B"),
         ready("Resource C"),
-        ready("Resource D")
+        ready("Resource D"),
     ]));
     let mut loaded_resource: Option<Vec<&'static str>> = None;
     loop {
@@ -20,9 +20,11 @@ async fn app(_window: Window, mut events: EventStream) {
                 while let Some(ev) = events.next_event().await {
                     println!("Resources loaded, event: {:?}", ev);
                 }
-            },
+            }
             None => {
-                let loading = resource_loading.take().expect("resource neither loaded or loading");
+                let loading = resource_loading
+                    .take()
+                    .expect("resource neither loaded or loading");
                 match select(loading, events.next_event()).await {
                     Either::Left((loaded, event_fut)) => {
                         loaded_resource = Some(loaded);
@@ -39,6 +41,3 @@ async fn app(_window: Window, mut events: EventStream) {
         }
     }
 }
-
-
-

@@ -2,7 +2,7 @@
 // Use the select function to accomplish this
 
 use blinds::{run, EventStream, Settings, Window};
-use futures_util::future::{Either, FutureExt, join_all, ready, select};
+use futures_util::future::{join_all, ready, select, Either, FutureExt};
 use std::future::Future;
 
 fn main() {
@@ -10,12 +10,15 @@ fn main() {
 }
 
 async fn app(_window: Window, events: EventStream) {
-    let mut custom_stream = CustomStream::new(events, join_all(vec![
-        ready("Resource A!"),
-        ready("Resource B"),
-        ready("Resource C"),
-        ready("Resource D")
-    ]));
+    let mut custom_stream = CustomStream::new(
+        events,
+        join_all(vec![
+            ready("Resource A!"),
+            ready("Resource B"),
+            ready("Resource C"),
+            ready("Resource D"),
+        ]),
+    );
     loop {
         match custom_stream.next_event().await {
             CustomEvent::Event(Some(ev)) => {
@@ -44,7 +47,10 @@ enum CustomEvent {
 }
 
 impl CustomStream {
-    fn new(events: EventStream, fut: impl 'static + Unpin + Future<Output = Resource>) -> CustomStream {
+    fn new(
+        events: EventStream,
+        fut: impl 'static + Unpin + Future<Output = Resource>,
+    ) -> CustomStream {
         CustomStream {
             events,
             resource_task: Some(Box::new(fut)),
