@@ -1,21 +1,19 @@
-use winit::event::{DeviceEvent, ElementState, WindowEvent};
 use super::*;
+use winit::event::{DeviceEvent, ElementState, WindowEvent};
 
 pub(crate) fn window_event(event: WindowEvent) -> Option<Event> {
     use WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ResizedEvent {
-            size: ps_to_vec(ls)
+            size: ps_to_vec(ls),
         }),
-        ScaleFactorChanged { scale_factor, .. } => Event::ScaleFactorChanged(ScaleFactorChangedEvent {
-            scale: scale_factor as f32
-        }),
-        ReceivedCharacter(chr) => Event::ReceivedCharacter(ReceivedCharacterEvent {
-            chr
-        }),
-        Focused(focus) => Event::FocusChanged(FocusChangedEvent {
-            focus
-        }),
+        ScaleFactorChanged { scale_factor, .. } => {
+            Event::ScaleFactorChanged(ScaleFactorChangedEvent {
+                scale: scale_factor as f32,
+            })
+        }
+        ReceivedCharacter(chr) => Event::ReceivedCharacter(ReceivedCharacterEvent { chr }),
+        Focused(focus) => Event::FocusChanged(FocusChangedEvent { focus }),
         KeyboardInput {
             input:
                 winit::event::KeyboardInput {
@@ -28,14 +26,25 @@ pub(crate) fn window_event(event: WindowEvent) -> Option<Event> {
             key: key.into(),
             is_down: state == ElementState::Pressed,
         }),
-        CursorMoved { device_id, position, .. } => Event::PointerMoved(PointerMovedEvent {
+        CursorMoved {
+            device_id,
+            position,
+            ..
+        } => Event::PointerMoved(PointerMovedEvent {
             id: Pointer(device_id),
-            location: pp_to_vec(position)
+            location: pp_to_vec(position),
         }),
-        CursorEntered { device_id, .. } => Event::PointerEntered(PointerEnteredEvent(Pointer(device_id))),
+        CursorEntered { device_id, .. } => {
+            Event::PointerEntered(PointerEnteredEvent(Pointer(device_id)))
+        }
         CursorLeft { device_id, .. } => Event::PointerLeft(PointerLeftEvent(Pointer(device_id))),
         MouseWheel { delta, .. } => Event::ScrollInput(delta.into()),
-        MouseInput { device_id, button, state, .. } => Event::PointerInput(PointerInputEvent {
+        MouseInput {
+            device_id,
+            button,
+            state,
+            ..
+        } => Event::PointerInput(PointerInputEvent {
             id: Pointer(device_id),
             button: button.into(),
             is_down: state == ElementState::Pressed,
@@ -110,4 +119,3 @@ fn pp_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>) -> Vecto
         y: ls.y.cast(),
     }
 }
-

@@ -12,7 +12,7 @@ async fn app(_window: Window, mut events: EventStream) {
                     break 'outer;
                 }
                 ev => println!("{:?}", ev),
-            } 
+            }
         }
     }
 }

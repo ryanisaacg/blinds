@@ -3,7 +3,7 @@ use winit::event::VirtualKeyCode;
 #[derive(Clone, Debug)]
 pub struct KeyboardEvent {
     pub(crate) key: Key,
-    pub(crate) is_down: bool
+    pub(crate) is_down: bool,
 }
 
 impl KeyboardEvent {

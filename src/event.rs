@@ -55,10 +55,9 @@ pub enum Event {
     GamepadAxis(GamepadAxisEvent),
 }
 
-
 #[derive(Clone, Debug)]
 pub struct ResizedEvent {
-    pub(crate) size: Vector2<f32>
+    pub(crate) size: Vector2<f32>,
 }
 
 impl ResizedEvent {
@@ -69,7 +68,7 @@ impl ResizedEvent {
 
 #[derive(Clone, Debug)]
 pub struct ScaleFactorChangedEvent {
-    pub(crate) scale: f32
+    pub(crate) scale: f32,
 }
 
 impl ScaleFactorChangedEvent {
@@ -80,7 +79,7 @@ impl ScaleFactorChangedEvent {
 
 #[derive(Clone, Debug)]
 pub struct FocusChangedEvent {
-    pub(crate) focus: bool
+    pub(crate) focus: bool,
 }
 
 impl FocusChangedEvent {
@@ -91,7 +90,7 @@ impl FocusChangedEvent {
 
 #[derive(Clone, Debug)]
 pub struct ReceivedCharacterEvent {
-    pub(crate) chr: char
+    pub(crate) chr: char,
 }
 
 impl ReceivedCharacterEvent {
@@ -99,7 +98,6 @@ impl ReceivedCharacterEvent {
         self.chr
     }
 }
-
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 /// A change in the event modifiers like shift, control, alt, or 'logo'

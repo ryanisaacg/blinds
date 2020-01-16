@@ -23,7 +23,7 @@ impl PointerLeftEvent {
 #[derive(Clone, Debug)]
 pub struct PointerMovedEvent {
     pub(crate) id: Pointer,
-    pub(crate) location: Vector2<f32>
+    pub(crate) location: Vector2<f32>,
 }
 
 impl PointerMovedEvent {
@@ -36,12 +36,11 @@ impl PointerMovedEvent {
     }
 }
 
-
 #[derive(Clone, Debug)]
 pub struct PointerInputEvent {
     pub(crate) id: Pointer,
     pub(crate) button: MouseButton,
-    pub(crate) is_down: bool
+    pub(crate) is_down: bool,
 }
 
 impl PointerInputEvent {

@@ -48,7 +48,7 @@ impl GamepadButtonEvent {
 pub struct GamepadAxisEvent {
     pub(crate) id: GamepadId,
     pub(crate) axis: GamepadAxis,
-    pub(crate) value: f32
+    pub(crate) value: f32,
 }
 
 impl GamepadAxisEvent {
