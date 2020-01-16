@@ -196,6 +196,7 @@ impl WindowContents {
             WindowContents { window }
         };
         window.set_cursor_icon(settings.cursor_icon);
+        window.set_title(settings.title);
 
         window
     }
@@ -275,7 +276,18 @@ impl WindowContents {
     }
 
     pub fn set_title(&self, title: &str) {
+        #[cfg(not(target_arch = "wasm32"))]
         self.window().set_title(title);
+
+        #[cfg(all(target_arch = "wasm32", feature = "stdweb"))]
+        std_web::web::document().set_title(title);
+
+        #[cfg(all(target_arch = "wasm32", feature = "web-sys"))]
+        web_sys::window()
+            .expect("Failed to obtain window")
+            .document()
+            .expect("Failed to obtain document")
+            .set_title(title);
     }
 
     pub fn set_fullscreen(&self, fullscreen: bool) {
@@ -339,10 +351,7 @@ impl Window {
         self.0.set_size(size);
     }
 
-    /// Set the title of the window
-    ///
-    /// Currently does nothing on the web, but will set the browser tab title in a future release
-    /// (see issue #5)
+    /// Set the title of the window or browser tab
     pub fn set_title(&self, title: &str) {
         self.0.set_title(title);
     }
