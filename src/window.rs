@@ -78,7 +78,7 @@ fn fullscreen_convert(fullscreen: bool, monitor: MonitorHandle) -> Option<Fullsc
 #[cfg(all(feature = "stdweb", target_arch = "wasm32"))]
 fn insert_canvas(
     window: &WinitWindow,
-    settings: &Settings,
+    _settings: &Settings,
 ) -> std_web::web::html_element::CanvasElement {
     use std_web::traits::*;
     use std_web::web::document;
@@ -91,28 +91,30 @@ fn insert_canvas(
         .expect("Document has no body node")
         .append_child(&canvas);
 
-    if let Some(path) = settings.icon_path {
-        let head = document.head().expect("Failed to find head node");
-        let element = document
-            .create_element("link")
-            .expect("Failed to create link element");
-        element
-            .set_attribute("rel", "shortcut icon")
-            .expect("Failed to create favicon element");
-        element
-            .set_attribute("type", "image/png")
-            .expect("Failed to create favicon element");
-        element
-            .set_attribute("href", path)
-            .expect("Failed to create favicon element");
-        head.append_child(&element);
+    #[cfg(feature = "favicon")] {
+        if let Some(path) = _settings.icon_path {
+            let head = document.head().expect("Failed to find head node");
+            let element = document
+                .create_element("link")
+                .expect("Failed to create link element");
+            element
+                .set_attribute("rel", "shortcut icon")
+                .expect("Failed to create favicon element");
+            element
+                .set_attribute("type", "image/png")
+                .expect("Failed to create favicon element");
+            element
+                .set_attribute("href", path)
+                .expect("Failed to create favicon element");
+            head.append_child(&element);
+        }
     }
 
     canvas
 }
 
 #[cfg(all(feature = "web-sys", target_arch = "wasm32"))]
-fn insert_canvas(window: &WinitWindow, settings: &Settings) -> web_sys::HtmlCanvasElement {
+fn insert_canvas(window: &WinitWindow, _settings: &Settings) -> web_sys::HtmlCanvasElement {
     use winit::platform::web::WindowExtWebSys;
     let canvas = window.canvas();
     let window = web_sys::window().expect("Failed to obtain window");
@@ -124,21 +126,23 @@ fn insert_canvas(window: &WinitWindow, settings: &Settings) -> web_sys::HtmlCanv
         .append_child(&canvas)
         .expect("Failed to insert canvas");
 
-    if let Some(path) = settings.icon_path {
-        let head = document.head().expect("Failed to find head node");
-        let element = document
-            .create_element("link")
-            .expect("Failed to create link element");
-        element
-            .set_attribute("rel", "shortcut icon")
-            .expect("Failed to create favicon element");
-        element
-            .set_attribute("type", "image/png")
-            .expect("Failed to create favicon element");
-        element
-            .set_attribute("href", path)
-            .expect("Failed to create favicon element");
-        head.append_child(&element).expect("Failed to add favicon");
+    #[cfg(feature = "favicon")] {
+        if let Some(path) = _settings.icon_path {
+            let head = document.head().expect("Failed to find head node");
+            let element = document
+                .create_element("link")
+                .expect("Failed to create link element");
+            element
+                .set_attribute("rel", "shortcut icon")
+                .expect("Failed to create favicon element");
+            element
+                .set_attribute("type", "image/png")
+                .expect("Failed to create favicon element");
+            element
+                .set_attribute("href", path)
+                .expect("Failed to create favicon element");
+            head.append_child(&element).expect("Failed to add favicon");
+        }
     }
 
     canvas
