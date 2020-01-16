@@ -25,33 +25,21 @@ pub enum Event {
     ///
     /// Operating systems often have key repeat settings that cause duplicate events to be
     /// generated for a single press.
-    KeyboardInput { key: Key, state: ElementState },
-    /// A given pointer has entered the window
-    MouseEntered { pointer: Pointer },
-    /// A given pointer has left the window
-    MouseLeft { pointer: Pointer },
-    /// The pointer has a new position within the window
-    MouseMoved {
-        pointer: Pointer,
-        position: Vector2<f32>,
-    },
+    KeyboardInput(Key, ElementState),
+    /// The mouse entered the window
+    MouseEntered,
+    /// The mouse left the window
+    MouseLeft,
+    /// The mouse pointer has a new position within the window
+    MouseMoved(Vector2<f32>),
     /// The mousewheel has scrolled, either in lines or pixels (depending on the input method)
-    MouseWheel {
-        pointer: Pointer,
-        delta: MouseScrollDelta,
-    },
+    MouseWheel(MouseScrollDelta),
     /// A mouse button has been pressed or released
-    MouseInput {
-        pointer: Pointer,
-        state: ElementState,
-        button: MouseButton,
-    },
-
+    MouseInput(MouseButton, ElementState),
     /// The keyboard modifiers have changed.
-    ModifiersChanged { modifiers: Modifiers },
-
+    ModifiersChanged(Modifiers),
     /// A gamepad button has been pressed or released, or an axis has changed
-    GamepadEvent { id: GamepadId, event: GamepadEvent },
+    GamepadEvent(GamepadId, GamepadEvent),
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
@@ -501,12 +489,9 @@ pub enum GamepadEvent {
     /// The gamepad is no longer available
     Disconnected,
     /// A button has been pressed or released
-    Button {
-        button: GamepadButton,
-        state: ElementState,
-    },
+    Button(GamepadButton, ElementState),
     /// An axis has changed its value
-    Axis { axis: GamepadAxis, value: f32 },
+    Axis(GamepadAxis, f32),
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]

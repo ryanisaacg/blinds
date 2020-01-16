@@ -132,9 +132,7 @@ fn process_gilrs_events(
 fn convert_winit_device(event: winit::event::DeviceEvent) -> Option<Event> {
     use winit::event::DeviceEvent::*;
     Some(match event {
-        ModifiersChanged(state) => Event::ModifiersChanged {
-            modifiers: state.into(),
-        },
+        ModifiersChanged(state) => Event::ModifiersChanged(state.into()),
         _ => return None,
     })
 }
@@ -154,40 +152,12 @@ fn convert_winit_window(event: winit::event::WindowEvent) -> Option<Event> {
                     ..
                 },
             ..
-        } => Event::KeyboardInput {
-            key: key.into(),
-            state: state.into(),
-        },
-        CursorMoved {
-            device_id,
-            position,
-            ..
-        } => Event::MouseMoved {
-            pointer: Pointer(device_id),
-            position: pp_to_vec(position),
-        },
-        CursorEntered { device_id } => Event::MouseEntered {
-            pointer: Pointer(device_id),
-        },
-        CursorLeft { device_id } => Event::MouseLeft {
-            pointer: Pointer(device_id),
-        },
-        MouseWheel {
-            device_id, delta, ..
-        } => Event::MouseWheel {
-            pointer: Pointer(device_id),
-            delta: delta.into(),
-        },
-        MouseInput {
-            device_id,
-            button,
-            state,
-            ..
-        } => Event::MouseInput {
-            pointer: Pointer(device_id),
-            state: state.into(),
-            button: button.into(),
-        },
+        } => Event::KeyboardInput(key.into(), state.into()),
+        CursorMoved { position, .. } => Event::MouseMoved(pp_to_vec(position)),
+        CursorEntered { .. } => Event::MouseEntered,
+        CursorLeft { .. } => Event::MouseLeft,
+        MouseWheel { delta, .. } => Event::MouseWheel(delta.into()),
+        MouseInput { button, state, .. } => Event::MouseInput(button.into(), state.into()),
         _ => return None,
     })
 }
@@ -197,27 +167,20 @@ fn convert_gilrs(event: gilrs::Event) -> Option<Event> {
     use gilrs::ev::EventType::*;
     let gilrs::Event { id, event, .. } = event;
     let event = match event {
-        ButtonPressed(btn, _) => convert_gilrs_button(btn).map(|button| GamepadEvent::Button {
-            button,
-            state: ElementState::Pressed,
-        }),
+        ButtonPressed(btn, _) => convert_gilrs_button(btn)
+            .map(|button| GamepadEvent::Button(button, ElementState::Pressed)),
         ButtonRepeated(_, _) => None,
-        ButtonReleased(btn, _) => convert_gilrs_button(btn).map(|button| GamepadEvent::Button {
-            button,
-            state: ElementState::Released,
-        }),
+        ButtonReleased(btn, _) => convert_gilrs_button(btn)
+            .map(|button| GamepadEvent::Button(button, ElementState::Released)),
         ButtonChanged(_, _, _) => None,
         AxisChanged(axis, value, _) => {
-            convert_gilrs_axis(axis).map(|axis| GamepadEvent::Axis { axis, value })
+            convert_gilrs_axis(axis).map(|axis| GamepadEvent::Axis(axis, value))
         }
         Connected => Some(GamepadEvent::Connected),
         Disconnected => Some(GamepadEvent::Disconnected),
         Dropped => None,
     };
-    event.map(|event| Event::GamepadEvent {
-        id: GamepadId(id),
-        event,
-    })
+    event.map(|event| Event::GamepadEvent(GamepadId(id), event))
 }
 
 #[cfg(feature = "gilrs")]

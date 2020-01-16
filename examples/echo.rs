@@ -5,13 +5,10 @@ fn main() {
 }
 
 async fn app(_window: Window, mut events: EventStream) {
-    loop {
+    'outer: loop {
         while let Some(ev) = events.next_event().await {
-            if let Event::KeyboardInput {
-                key: Key::Escape, ..
-            } = ev
-            {
-                break;
+            if let Event::KeyboardInput(Key::Escape, _) = ev {
+                break 'outer;
             }
             println!("{:?}", ev);
         }
