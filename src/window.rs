@@ -91,7 +91,8 @@ fn insert_canvas(
         .expect("Document has no body node")
         .append_child(&canvas);
 
-    #[cfg(feature = "favicon")] {
+    #[cfg(feature = "favicon")]
+    {
         if let Some(path) = _settings.icon_path {
             let head = document.head().expect("Failed to find head node");
             let element = document
@@ -126,7 +127,8 @@ fn insert_canvas(window: &WinitWindow, _settings: &Settings) -> web_sys::HtmlCan
         .append_child(&canvas)
         .expect("Failed to insert canvas");
 
-    #[cfg(feature = "favicon")] {
+    #[cfg(feature = "favicon")]
+    {
         if let Some(path) = _settings.icon_path {
             let head = document.head().expect("Failed to find head node");
             let element = document
