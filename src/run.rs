@@ -2,7 +2,6 @@ use crate::event::*;
 use crate::{EventBuffer, EventStream, Settings, Window, WindowContents};
 use futures_executor::LocalPool;
 use futures_util::task::LocalSpawnExt;
-use mint::Vector2;
 use std::cell::RefCell;
 use std::future::Future;
 use std::sync::Arc;
@@ -92,12 +91,12 @@ fn do_run(
                 if let winit::event::WindowEvent::Resized(size) = &event {
                     window.resize(*size);
                 }
-                if let Some(event) = convert_winit_window(event) {
+                if let Some(event) = window_event(event) {
                     buffer.borrow_mut().push(event);
                 }
             }
             WinitEvent::DeviceEvent { event, .. } => {
-                if let Some(event) = convert_winit_device(event) {
+                if let Some(event) = device_event(event) {
                     buffer.borrow_mut().push(event);
                 }
             }
@@ -122,116 +121,9 @@ fn process_gilrs_events(
 ) {
     if let Ok(gilrs) = gilrs.as_mut() {
         while let Some(ev) = gilrs.next_event() {
-            if let Some(ev) = convert_gilrs(ev) {
+            if let Some(ev) = gamepad_event(ev) {
                 buffer.borrow_mut().push(ev);
             }
         }
-    }
-}
-
-fn convert_winit_device(event: winit::event::DeviceEvent) -> Option<Event> {
-    use winit::event::DeviceEvent::*;
-    Some(match event {
-        ModifiersChanged(state) => Event::ModifiersChanged(state.into()),
-        _ => return None,
-    })
-}
-
-fn convert_winit_window(event: winit::event::WindowEvent) -> Option<Event> {
-    use winit::event::WindowEvent::*;
-    Some(match event {
-        Resized(ls) => Event::Resized(ps_to_vec(ls)),
-        ScaleFactorChanged { scale_factor, .. } => Event::ScaleFactorChanged(scale_factor as f32),
-        ReceivedCharacter(c) => Event::ReceivedCharacter(c),
-        Focused(f) => Event::Focused(f),
-        KeyboardInput {
-            input:
-                winit::event::KeyboardInput {
-                    state,
-                    virtual_keycode: Some(key),
-                    ..
-                },
-            ..
-        } => Event::KeyboardInput(key.into(), state.into()),
-        CursorMoved { position, .. } => Event::MouseMoved(pp_to_vec(position)),
-        CursorEntered { .. } => Event::MouseEntered,
-        CursorLeft { .. } => Event::MouseLeft,
-        MouseWheel { delta, .. } => Event::MouseWheel(delta.into()),
-        MouseInput { button, state, .. } => Event::MouseInput(button.into(), state.into()),
-        _ => return None,
-    })
-}
-
-#[cfg(feature = "gilrs")]
-fn convert_gilrs(event: gilrs::Event) -> Option<Event> {
-    use gilrs::ev::EventType::*;
-    let gilrs::Event { id, event, .. } = event;
-    let event = match event {
-        ButtonPressed(btn, _) => convert_gilrs_button(btn)
-            .map(|button| GamepadEvent::Button(button, ElementState::Pressed)),
-        ButtonRepeated(_, _) => None,
-        ButtonReleased(btn, _) => convert_gilrs_button(btn)
-            .map(|button| GamepadEvent::Button(button, ElementState::Released)),
-        ButtonChanged(_, _, _) => None,
-        AxisChanged(axis, value, _) => {
-            convert_gilrs_axis(axis).map(|axis| GamepadEvent::Axis(axis, value))
-        }
-        Connected => Some(GamepadEvent::Connected),
-        Disconnected => Some(GamepadEvent::Disconnected),
-        Dropped => None,
-    };
-    event.map(|event| Event::GamepadEvent(GamepadId(id), event))
-}
-
-#[cfg(feature = "gilrs")]
-fn convert_gilrs_button(event: gilrs::ev::Button) -> Option<GamepadButton> {
-    use gilrs::ev::Button::*;
-    Some(match event {
-        South => GamepadButton::South,
-        East => GamepadButton::East,
-        North => GamepadButton::North,
-        West => GamepadButton::West,
-        LeftTrigger => GamepadButton::LeftShoulder,
-        LeftTrigger2 => GamepadButton::LeftShoulder,
-        RightTrigger => GamepadButton::RightShoulder,
-        RightTrigger2 => GamepadButton::RightTrigger,
-        Select => GamepadButton::Select,
-        Start => GamepadButton::Start,
-        LeftThumb => GamepadButton::LeftStick,
-        RightThumb => GamepadButton::RightStick,
-        DPadUp => GamepadButton::DPadUp,
-        DPadDown => GamepadButton::DPadDown,
-        DPadLeft => GamepadButton::DPadLeft,
-        DPadRight => GamepadButton::DPadRight,
-
-        C | Z | Unknown | Mode => return None,
-    })
-}
-
-#[cfg(feature = "gilrs")]
-fn convert_gilrs_axis(axis: gilrs::ev::Axis) -> Option<GamepadAxis> {
-    use gilrs::ev::Axis::*;
-
-    Some(match axis {
-        LeftStickX => GamepadAxis::LeftStickX,
-        LeftStickY => GamepadAxis::LeftStickY,
-        RightStickX => GamepadAxis::RightStickX,
-        RightStickY => GamepadAxis::RightStickY,
-
-        LeftZ | RightZ | DPadX | DPadY | Unknown => return None,
-    })
-}
-
-fn ps_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalSize<P>) -> Vector2<f32> {
-    Vector2 {
-        x: ls.width.cast(),
-        y: ls.height.cast(),
-    }
-}
-
-fn pp_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>) -> Vector2<f32> {
-    Vector2 {
-        x: ls.x.cast(),
-        y: ls.y.cast(),
     }
 }

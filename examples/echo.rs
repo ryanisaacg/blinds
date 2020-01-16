@@ -7,10 +7,12 @@ fn main() {
 async fn app(_window: Window, mut events: EventStream) {
     'outer: loop {
         while let Some(ev) = events.next_event().await {
-            if let Event::KeyboardInput(Key::Escape, _) = ev {
-                break 'outer;
-            }
-            println!("{:?}", ev);
+            match ev {
+                Event::KeyboardInput(e) if e.key() == Key::Escape => {
+                    break 'outer;
+                }
+                ev => println!("{:?}", ev),
+            } 
         }
     }
 }
