@@ -1,5 +1,4 @@
 
-// use async_std::task::sleep;
 use blinds::{run, EventStream, Event as BlindsEvent, Settings, Window};
 use futures_util::task::LocalSpawnExt;
 use futures_core::stream::Stream;
@@ -56,17 +55,50 @@ mod sleep {
     pub async fn sleep_1() { sleep(Duration::from_secs(1)).await }
 }
 
-
 #[cfg(all(feature = "stdweb", target_arch = "wasm32"))]
 mod sleep {
-    use futures_util::future::pending;
-    pub async fn sleep_1() { pending().await }
+    extern crate std_web;
+
+    use std_web::web::wait;
+
+    pub async fn sleep_1() { wait(1000).await }
 }
 
 #[cfg(all(feature = "web-sys", target_arch = "wasm32"))]
 mod sleep {
+    extern crate js_sys;
+    extern crate wasm_bindgen_futures;
+
+    use std::future::Future;
     use futures_util::future::pending;
-    pub async fn sleep_1() { pending().await }
+    use web_sys::window;
+    use js_sys::{Function, Promise, Array};
+    use wasm_bindgen_futures::JsFuture;
+    use wasm_bindgen::closure::Closure;
+    use wasm_bindgen::JsValue;
+    use wasm_bindgen::JsCast;
+    use log::info;
+
+    /**
+     * This fails at runtime. I don't think things are compatible...
+     */
+
+    pub async fn sleep_1() {
+        info!("TICK");
+        let cb = Closure::wrap(Box::new(|| {
+            info!("TOCK")
+        }) as Box<dyn FnMut()>);
+        let window = window().expect("Failed to get window");
+        window.set_timeout_with_callback_and_timeout_and_arguments(cb.as_ref().unchecked_ref(), 1000, &Array::new()).expect("Set timeout");
+
+        // JsFuture::from(Promise::new(|resolve: Function, reject: Function| {
+        //     let cb = Closure::wrap(Box::new(|| {
+        //         resolve.call0(&JsValue::NULL);
+        //     }) as Box<FnMut()>);
+        //     let cbf: Function = cb.as_ref().unchecked_ref();
+        //     window.set_timeout_with_callback(&cbf);
+        // }));
+    }
 }
 
 async fn tick_loop(local_events: Arc<RefCell<MyEventBuffer<CustomEvent>>>)  {
