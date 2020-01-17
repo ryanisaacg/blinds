@@ -35,5 +35,17 @@ webgl_stdweb = { version = "0.3.0", optional = true }
 web_sys = { version = "0.3.22", package = "web-sys", optional = true, features = ["HtmlHeadElement"] }
 winit = "0.20.0"
 
+[dev-dependencies]
+instant = "*"
+futures-core = "*"
+log = "*"
+
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 glutin = { version = "0.22", optional = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dev-dependencies]
+async-std = "*"
+simple_logger = "1.4"
+
+[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+web_logger = "0.2"
