@@ -19,12 +19,6 @@ pub struct EventStream {
     buffer: Arc<RefCell<EventBuffer>>,
 }
 
-impl Clone for EventStream {
-    fn clone(&self) -> Self { 
-        EventStream { buffer: self.buffer() } 
-    }
-}
-
 impl EventStream {
     pub(crate) fn new() -> Self {
         EventStream {

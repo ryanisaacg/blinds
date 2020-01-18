@@ -1,18 +1,16 @@
 
-use blinds::{run, EventStream, Event as BlindsEvent, Key, Settings, Window};
+use blinds::{run, EventStream, Event as BlindsEvent, Key, Settings, Window, ElementState};
 use futures_util::task::LocalSpawnExt;
 use futures_core::stream::Stream;
 use futures_util::stream::FuturesUnordered;
 use std::sync::Arc;
 use std::cell::RefCell;
 use std::pin::Pin;
-use futures_util::future::{poll_fn, pending};
-use futures_util::future::{select_all, FutureExt};
-use std::collections::VecDeque;
+use futures_util::future::poll_fn;
 use std::future::Future;
 use std::task::{Poll, Waker};
 use futures_util::future::LocalFutureObj;
-use log::info;
+use log::{debug, info, trace};
 
 fn set_logger() {
     #[cfg(target_arch = "wasm32")]
@@ -30,21 +28,9 @@ fn main() {
 
 #[derive(Debug)]
 enum CustomEvent {
-    Ticked
+    OnePingOnly,
+    Ticked,
 }
-
-#[derive(Debug)]
-enum LocalEvent {
-    Blinds(BlindsEvent),
-    Custom(CustomEvent),
-    TaskFinished
-}
-
-/**
- * Bugs!
- * #1 added a real cross-platform timer implementation
- * #2 Without any tasks running, polling the FuturedUnordered is always Ready. Need to use a waker.
- */
 
 #[cfg(not(target_arch = "wasm32"))]
 mod sleep {
@@ -63,131 +49,117 @@ mod sleep {
     pub async fn sleep_1() { wait(1000).await }
 }
 
-async fn tick_loop(local_events: Arc<RefCell<MyEventBuffer<CustomEvent>>>)  {
+async fn tick_loop<'a>(task_context: MyTaskContext<'a, CustomEvent>) {
     loop {
-        local_events.borrow_mut().push(CustomEvent::Ticked);
+        task_context.dispatch(CustomEvent::Ticked);
         sleep::sleep_1().await
     }
 }
 
-async fn next_blinds_event_blocking(mut event_stream: EventStream) -> LocalEvent {
-    let ev = loop {
-        match event_stream.next_event().await {
-            None => continue,
-            Some(ev) => break ev
-        }
-    };
-    LocalEvent::Blinds(ev)
+struct MyTaskContext<'a, E> {
+    events: Arc<RefCell<Vec<E>>>,
+    futures: Arc<RefCell<FuturesUnordered<LocalFutureObj<'a, ()>>>>,
+    task_waker: Arc<RefCell<Option<Waker>>>,
 }
 
-async fn next_finished_task<Fut>(futures_cell: Arc<RefCell<FuturesUnordered<Fut>>>) -> LocalEvent where Fut: Future<Output = ()>  {
-    let futures_cell = futures_cell.clone();
-    poll_fn(move |cx| {
-        let mut x = futures_cell.borrow_mut();
-        let pinned_pool = Pin::new(&mut *x);
-        let poll_result = pinned_pool.poll_next(cx);
-        poll_result
-    }).await;
-    LocalEvent::TaskFinished
-}
-
-async fn app(_window: Window, event_stream: EventStream) {
-    // Setup all of the crap
-    let mut local_events: MyEventStream<CustomEvent> = MyEventStream::new();
-    let futures_pool: FuturesUnordered<LocalFutureObj<()>> = FuturesUnordered::new();
-    let futures_cell = Arc::new(RefCell::new(futures_pool));
-
-    // Spawn a never-ending task to keep the future pool from spinning freely. Hack for bug #2
-    futures_cell.borrow().spawn_local(pending()).expect("Failed to start pending task");
-
-    // Spawn the loop task
-    // !!! Disabled because it needs to go into Pending somehow !!!
-    futures_cell.borrow().spawn_local(tick_loop(local_events.buffer())).expect("Failed to start tick loop");
-
-    'main: loop {
-        // Define all of the possible futures (now all same type)
-        let task = next_finished_task(futures_cell.clone()).boxed_local();
-        let blinds = next_blinds_event_blocking(event_stream.clone()).boxed_local();
-        let local = local_events.next_event_blocking().map(|ev| LocalEvent::Custom(ev)).boxed_local();
-
-        // Wait for the first one
-        let (ev, _index, _remaining) = select_all(vec!(task, blinds, local)).await;
-
-        // Switch
-        match ev {
-            LocalEvent::Blinds(ev) => {
-                info!("Blinds Event {:?}", ev);
-                if let BlindsEvent::KeyboardInput {
-                    key: Key::Escape, ..
-                } = ev
-                {
-                    break 'main;
-                }
-            },
-            LocalEvent::Custom(ev) => info!("Custom Event {:?}", ev),
-            LocalEvent::TaskFinished => info!("Task finished")
+impl <'a, E> Clone for MyTaskContext<'a, E> {
+    fn clone(&self) -> Self {
+        MyTaskContext {
+            events: self.events.clone(),
+            futures: self.futures.clone(),
+            task_waker: self.task_waker.clone(),
         }
     }
 }
 
-/**
- * Everything below here is a copy of something already in the repository, but made generic
- */
-
-// #[derive(Clone)]
-pub struct MyEventStream<E> {
-    buffer: Arc<RefCell<MyEventBuffer<E>>>,
-}
-
-impl <E> MyEventStream<E> {
-    pub(crate) fn new() -> Self {
-        MyEventStream {
-            buffer: Arc::new(RefCell::new(MyEventBuffer {
-                events: VecDeque::new(),
-                waker: None,
-                ready: false,
-            })),
+impl<'a, E> MyTaskContext<'a, E> {
+    fn new() -> Self {
+        MyTaskContext {
+            events: Arc::new(RefCell::new(Vec::new())),
+            futures: Arc::new(RefCell::new(FuturesUnordered::new())),
+            task_waker: Arc::new(RefCell::new(None)),
         }
     }
 
-    pub(crate) fn buffer(&self) -> Arc<RefCell<MyEventBuffer<E>>> {
-        self.buffer.clone()
-    }
-
-    pub fn next_event_blocking<'a>(&'a mut self) -> impl 'a + Future<Output = E> {
+    async fn run_until_stalled(&mut self) {
         poll_fn(move |cx| {
-            let mut buffer = self.buffer.borrow_mut();
-            match buffer.events.pop_front() {
-                Some(event) => Poll::Ready(event),
-                None => {
-                    if buffer.ready {
-                        buffer.ready = false
+            let mut x = self.futures.borrow_mut();
+            loop {
+                let pinned_pool = Pin::new(&mut *x);
+                let pool_state = pinned_pool.poll_next(cx);
+                trace!("Task context run pool_state: {:?}", pool_state);
+                match pool_state {
+                    Poll::Pending => break Poll::Ready(()),
+                    Poll::Ready(Some(_)) => {
+                        debug!("Task finished");
+                        continue
                     }
-                    buffer.waker = Some(cx.waker().clone());
-                    Poll::Pending
+                    Poll::Ready(None) => {
+                        self.task_waker.replace(Some(cx.waker().clone()));
+                        break Poll::Ready(())
+                    }
                 }
             }
-        })
-    }
-}
-
-// #[derive(Clone)]
-pub(crate) struct MyEventBuffer<E> {
-    events: VecDeque<E>,
-    waker: Option<Waker>,
-    ready: bool,
-}
-
-impl <E> MyEventBuffer<E> {
-    pub fn push(&mut self, event: E) {
-        self.events.push_back(event);
-        self.mark_ready();
+        }).await
     }
 
-    pub fn mark_ready(&mut self) {
-        if let Some(waker) = self.waker.take() {
+    fn spawn<Fut>(&mut self, task: Fut) where Fut: 'static + Future<Output = ()> {
+        debug!("Spawning new task");
+        self.futures.borrow().spawn_local(task).expect("");
+        if let Some(waker) = self.task_waker.replace(None) {
             waker.wake();
         }
-        self.ready = true;
+    }
+
+    fn dispatch(&self, event: E) {
+        self.events.borrow_mut().push(event)
+    }
+
+    fn drain(&self) -> Vec<E> {
+        self.events.replace(Vec::new())
+    }
+}
+
+async fn app(_window: Window, mut event_stream: EventStream) {
+    let mut task_context: MyTaskContext<CustomEvent> = MyTaskContext::new();
+
+    task_context.spawn(tick_loop(task_context.clone()));
+
+    let cloned_task_context = task_context.clone();
+    task_context.spawn(async move {
+        cloned_task_context.dispatch(CustomEvent::OnePingOnly);
+        sleep::sleep_1().await
+    });
+
+    'main: loop {
+        // debug!("Main loop wrapped around");
+        task_context.run_until_stalled().await;
+
+        for custom_event in task_context.drain().into_iter() {
+            info!("CustomEvent: {:?}", custom_event)
+        }
+
+        while let Some(ev) = event_stream.next_event().await {
+            if let BlindsEvent::KeyboardInput {
+                key: Key::Escape, ..
+            } = ev
+            {
+                break 'main;
+            }
+
+            if let BlindsEvent::KeyboardInput {
+                key: Key::P, state: ElementState::Pressed
+            } = ev
+            {
+                let cloned_task_context = task_context.clone();
+                task_context.spawn(async move {
+                    cloned_task_context.dispatch(CustomEvent::OnePingOnly);
+                    sleep::sleep_1().await
+                });
+            }
+
+            info!("BlindsEvent: {:?}", ev);
+        }
+        
     }
 }
