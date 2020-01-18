@@ -20,13 +20,13 @@ pub struct EventStream {
 }
 
 impl Clone for EventStream {
-    fn clone(&self) -> Self {
-        EventStream { buffer : self.buffer() }
+    fn clone(&self) -> Self { 
+        EventStream { buffer: self.buffer() } 
     }
 }
 
 impl EventStream {
-    pub(crate) fn new() -> EventStream {
+    pub(crate) fn new() -> Self {
         EventStream {
             buffer: Arc::new(RefCell::new(EventBuffer {
                 events: VecDeque::new(),
@@ -61,23 +61,6 @@ impl EventStream {
                         buffer.waker = Some(cx.waker().clone());
                         Poll::Pending
                     }
-                }
-            }
-        })
-    }
-
-    // FIXME: change the type 
-    pub fn next_event_blocking<'a>(&'a mut self) -> impl 'a + Future<Output = Event> {
-        poll_fn(move |cx| {
-            let mut buffer = self.buffer.borrow_mut();
-            match buffer.events.pop_front() {
-                Some(event) => Poll::Ready(event),
-                None => {
-                    if buffer.ready {
-                        buffer.ready = false
-                    }
-                    buffer.waker = Some(cx.waker().clone());
-                    Poll::Pending
                 }
             }
         })

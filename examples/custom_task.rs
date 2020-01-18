@@ -1,5 +1,5 @@
 
-use blinds::{run, EventStream, Event as BlindsEvent, Settings, Window};
+use blinds::{run, EventStream, Event as BlindsEvent, Key, Settings, Window};
 use futures_util::task::LocalSpawnExt;
 use futures_core::stream::Stream;
 use futures_util::stream::FuturesUnordered;
@@ -42,8 +42,7 @@ enum LocalEvent {
 
 /**
  * Bugs!
- * 
- * #1 Without a real sleep/timer/alarm, the tick_loop is "uncooperative" and doesn't suspend
+ * #1 added a real cross-platform timer implementation
  * #2 Without any tasks running, polling the FuturedUnordered is always Ready. Need to use a waker.
  */
 
@@ -64,43 +63,6 @@ mod sleep {
     pub async fn sleep_1() { wait(1000).await }
 }
 
-#[cfg(all(feature = "web-sys", target_arch = "wasm32"))]
-mod sleep {
-    extern crate js_sys;
-    extern crate wasm_bindgen_futures;
-
-    use std::future::Future;
-    use futures_util::future::pending;
-    use web_sys::window;
-    use js_sys::{Function, Promise, Array};
-    use wasm_bindgen_futures::JsFuture;
-    use wasm_bindgen::closure::Closure;
-    use wasm_bindgen::JsValue;
-    use wasm_bindgen::JsCast;
-    use log::info;
-
-    /**
-     * This fails at runtime. I don't think things are compatible...
-     */
-
-    pub async fn sleep_1() {
-        info!("TICK");
-        let cb = Closure::wrap(Box::new(|| {
-            info!("TOCK")
-        }) as Box<dyn FnMut()>);
-        let window = window().expect("Failed to get window");
-        window.set_timeout_with_callback_and_timeout_and_arguments(cb.as_ref().unchecked_ref(), 1000, &Array::new()).expect("Set timeout");
-
-        // JsFuture::from(Promise::new(|resolve: Function, reject: Function| {
-        //     let cb = Closure::wrap(Box::new(|| {
-        //         resolve.call0(&JsValue::NULL);
-        //     }) as Box<FnMut()>);
-        //     let cbf: Function = cb.as_ref().unchecked_ref();
-        //     window.set_timeout_with_callback(&cbf);
-        // }));
-    }
-}
-
 async fn tick_loop(local_events: Arc<RefCell<MyEventBuffer<CustomEvent>>>)  {
     loop {
         local_events.borrow_mut().push(CustomEvent::Ticked);
@@ -108,8 +70,14 @@ async fn tick_loop(local_events: Arc<RefCell<MyEventBuffer<CustomEvent>>>)  {
     }
 }
 
-async fn next_event(mut event_stream: EventStream) -> LocalEvent {
-    LocalEvent::Blinds(event_stream.next_event_blocking().await)
+async fn next_blinds_event_blocking(mut event_stream: EventStream) -> LocalEvent {
+    let ev = loop {
+        match event_stream.next_event().await {
+            None => continue,
+            Some(ev) => break ev
+        }
+    };
+    LocalEvent::Blinds(ev)
 }
 
 async fn next_finished_task<Fut>(futures_cell: Arc<RefCell<FuturesUnordered<Fut>>>) -> LocalEvent where Fut: Future<Output = ()>  {
@@ -139,7 +107,7 @@ async fn app(_window: Window, event_stream: EventStream) {
     'main: loop {
         // Define all of the possible futures (now all same type)
         let task = next_finished_task(futures_cell.clone()).boxed_local();
-        let blinds = next_event(event_stream.clone()).boxed_local();
+        let blinds = next_blinds_event_blocking(event_stream.clone()).boxed_local();
         let local = local_events.next_event_blocking().map(|ev| LocalEvent::Custom(ev)).boxed_local();
 
         // Wait for the first one
@@ -147,7 +115,15 @@ async fn app(_window: Window, event_stream: EventStream) {
 
         // Switch
         match ev {
-            LocalEvent::Blinds(ev) => info!("Blinds Event {:?}", ev),
+            LocalEvent::Blinds(ev) => {
+                info!("Blinds Event {:?}", ev);
+                if let BlindsEvent::KeyboardInput {
+                    key: Key::Escape, ..
+                } = ev
+                {
+                    break 'main;
+                }
+            },
             LocalEvent::Custom(ev) => info!("Custom Event {:?}", ev),
             LocalEvent::TaskFinished => info!("Task finished")
         }
@@ -178,7 +154,6 @@ impl <E> MyEventStream<E> {
         self.buffer.clone()
     }
 
-    // FIXME: change the type 
     pub fn next_event_blocking<'a>(&'a mut self) -> impl 'a + Future<Output = E> {
         poll_fn(move |cx| {
             let mut buffer = self.buffer.borrow_mut();
