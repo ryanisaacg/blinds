@@ -109,20 +109,20 @@ pub struct ModifiersChangedEvent {
 }
 
 impl ModifiersChangedEvent {
-    pub fn shift(&self) -> bool {
+    pub fn shift(self) -> bool {
         self.shift
     }
 
-    pub fn ctrl(&self) -> bool {
+    pub fn ctrl(self) -> bool {
         self.ctrl
     }
 
-    pub fn alt(&self) -> bool {
+    pub fn alt(self) -> bool {
         self.alt
     }
 
     /// Windows, Command, etc.
-    pub fn logo(&self) -> bool {
+    pub fn logo(self) -> bool {
         self.logo
     }
 }
