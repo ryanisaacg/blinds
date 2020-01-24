@@ -1,6 +1,9 @@
 use winit::event::VirtualKeyCode;
 
 #[derive(Clone, Debug)]
+/// See [`Event::KeyboardInput`]
+///
+/// [`Event::KeyboardInput`]: crate::event::Event::KeyboardInput
 pub struct KeyboardEvent {
     pub(crate) key: Key,
     pub(crate) is_down: bool,
@@ -11,6 +14,7 @@ impl KeyboardEvent {
         self.key
     }
 
+    /// If the key is now down, either repeating or down for the first time
     pub fn is_down(&self) -> bool {
         self.is_down
     }

@@ -33,40 +33,43 @@ pub enum Event {
     /// Operating systems often have key repeat settings that cause duplicate events to be
     /// generated for a single press.
     KeyboardInput(KeyboardEvent),
-    /// The mouse entered the window
+    /// A pointer entered the window
     PointerEntered(PointerEnteredEvent),
-    /// The mouse left the window
+    /// A pointer has exited the window
     PointerLeft(PointerLeftEvent),
-    /// The mouse pointer has a new position within the window
+    /// A pointer has a new position, relative to the window's top-left
     PointerMoved(PointerMovedEvent),
-    /// A mouse button has been pressed or released
+    /// A button on a pointer, likely a mouse, has produced an input
     PointerInput(PointerInputEvent),
     /// The mousewheel has scrolled, either in lines or pixels (depending on the input method)
     ScrollInput(ScrollDelta),
-    /// The keyboard modifiers have changed.
+    /// The keyboard modifiers (e.g. shift, alt, ctrl) have changed
     ModifiersChanged(ModifiersChangedEvent),
     /// A gamepad has been connected
     GamepadConnected(GamepadConnectedEvent),
-    /// A gamepad has been connected
+    /// A gamepad has been disconnected
     GamepadDisconnected(GamepadDisconnectedEvent),
-    /// A gamepad has been connected
+    /// A gamepad button has been pressed or released
     GamepadButton(GamepadButtonEvent),
-    /// A gamepad has been connected
+    /// A gamepad axis has changed its value
     GamepadAxis(GamepadAxisEvent),
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::Resized`]
 pub struct ResizedEvent {
     pub(crate) size: Vector2<f32>,
 }
 
 impl ResizedEvent {
+    /// The new logical size of the window, taking into account DPI
     pub fn logical_size(&self) -> Vector2<f32> {
         self.size
     }
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::ScaleFactorChanged`]
 pub struct ScaleFactorChangedEvent {
     pub(crate) scale: f32,
 }
@@ -78,6 +81,7 @@ impl ScaleFactorChangedEvent {
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::FocusChanged`]
 pub struct FocusChangedEvent {
     pub(crate) focus: bool,
 }
@@ -89,11 +93,13 @@ impl FocusChangedEvent {
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::ReceivedCharacter`]
 pub struct ReceivedCharacterEvent {
     pub(crate) chr: char,
 }
 
 impl ReceivedCharacterEvent {
+    /// The character entered by the user
     pub fn character(&self) -> char {
         self.chr
     }
@@ -101,6 +107,8 @@ impl ReceivedCharacterEvent {
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 /// A change in the event modifiers like shift, control, alt, or 'logo'
+///
+/// See [`Event::ModifiersChanged`]
 pub struct ModifiersChangedEvent {
     shift: bool,
     ctrl: bool,

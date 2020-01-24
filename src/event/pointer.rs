@@ -3,48 +3,61 @@ use winit::dpi::LogicalPosition;
 use winit::event::{DeviceId, MouseScrollDelta as MSD};
 
 #[derive(Clone, Debug)]
-pub struct PointerEnteredEvent(pub(crate) Pointer);
+/// See [`Event::PointerEntered`]
+///
+/// [`Event::PointerEntered`]: crate::event::Event::PointerEntered
+pub struct PointerEnteredEvent(pub(crate) PointerId);
 
 impl PointerEnteredEvent {
-    pub fn pointer(&self) -> Pointer {
+    pub fn pointer(&self) -> PointerId {
         self.0
     }
 }
 
 #[derive(Clone, Debug)]
-pub struct PointerLeftEvent(pub(crate) Pointer);
+/// See [`Event::PointerLeft`]
+///
+/// [`Event::PointerLeft`]: crate::event::Event::PointerLeft
+pub struct PointerLeftEvent(pub(crate) PointerId);
 
 impl PointerLeftEvent {
-    pub fn pointer(&self) -> Pointer {
+    pub fn pointer(&self) -> PointerId {
         self.0
     }
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::PointerMoved`]
+///
+/// [`Event::PointerMoved`]: crate::event::Event::PointerMoved
 pub struct PointerMovedEvent {
-    pub(crate) id: Pointer,
+    pub(crate) id: PointerId,
     pub(crate) location: Vector2<f32>,
 }
 
 impl PointerMovedEvent {
-    pub fn pointer(&self) -> Pointer {
+    pub fn pointer(&self) -> PointerId {
         self.id
     }
 
+    /// The logical location of the pointer, relative to the top-left of the window
     pub fn location(&self) -> Vector2<f32> {
         self.location
     }
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::PointerInput`]
+///
+/// [`Event::PointerInput`]: crate::event::Event::PointerInput
 pub struct PointerInputEvent {
-    pub(crate) id: Pointer,
+    pub(crate) id: PointerId,
     pub(crate) button: MouseButton,
     pub(crate) is_down: bool,
 }
 
 impl PointerInputEvent {
-    pub fn pointer(&self) -> Pointer {
+    pub fn pointer(&self) -> PointerId {
         self.id
     }
 
@@ -52,6 +65,7 @@ impl PointerInputEvent {
         self.button
     }
 
+    /// If the button is now down, either repeating or down for the first time
     pub fn is_down(&self) -> bool {
         self.is_down
     }
@@ -59,7 +73,7 @@ impl PointerInputEvent {
 
 #[derive(Clone, Copy, PartialOrd, PartialEq, Eq, Ord, Debug, Hash)]
 /// A unique ID for multiple mouse pointers
-pub struct Pointer(pub(crate) DeviceId);
+pub struct PointerId(pub(crate) DeviceId);
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 /// A button on a standard 3-button mouse

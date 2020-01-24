@@ -1,6 +1,9 @@
 use std::cmp::Ordering;
 
 #[derive(Clone, Debug)]
+/// See [`Event::GamepadConnected`]
+///
+/// [`Event::GamepadConnected`]: crate::event::Event::GamepadConnected
 pub struct GamepadConnectedEvent(pub(crate) GamepadId);
 
 impl GamepadConnectedEvent {
@@ -10,6 +13,9 @@ impl GamepadConnectedEvent {
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::GamepadDisconnected`]
+///
+/// [`Event::GamepadDisconnected`]: crate::event::Event::GamepadDisconnected
 pub struct GamepadDisconnectedEvent(pub(crate) GamepadId);
 
 impl GamepadDisconnectedEvent {
@@ -19,6 +25,9 @@ impl GamepadDisconnectedEvent {
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::GamepadButton`]
+///
+/// [`Event::GamepadButton`]: crate::event::Event::GamepadButton
 pub struct GamepadButtonEvent {
     pub(crate) id: GamepadId,
     pub(crate) button: GamepadButton,
@@ -27,6 +36,7 @@ pub struct GamepadButtonEvent {
 }
 
 impl GamepadButtonEvent {
+    /// Which gamepad generated the event
     pub fn id(&self) -> &GamepadId {
         &self.id
     }
@@ -35,16 +45,21 @@ impl GamepadButtonEvent {
         self.button
     }
 
+    /// If the button is now down, either repeating or down for the first time
     pub fn is_down(&self) -> bool {
         self.is_down
     }
 
+    /// If this event is a repeat of a previous down event
     pub fn is_repeat(&self) -> bool {
         self.is_repeat
     }
 }
 
 #[derive(Clone, Debug)]
+/// See [`Event::GamepadAxis`]
+///
+/// [`Event::GamepadAxis`]: crate::event::Event::GamepadAxis
 pub struct GamepadAxisEvent {
     pub(crate) id: GamepadId,
     pub(crate) axis: GamepadAxis,
@@ -52,6 +67,7 @@ pub struct GamepadAxisEvent {
 }
 
 impl GamepadAxisEvent {
+    /// Which gamepad generated the event
     pub fn id(&self) -> &GamepadId {
         &self.id
     }

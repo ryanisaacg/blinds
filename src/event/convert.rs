@@ -31,13 +31,13 @@ pub(crate) fn window_event(event: WindowEvent) -> Option<Event> {
             position,
             ..
         } => Event::PointerMoved(PointerMovedEvent {
-            id: Pointer(device_id),
+            id: PointerId(device_id),
             location: pp_to_vec(position),
         }),
         CursorEntered { device_id, .. } => {
-            Event::PointerEntered(PointerEnteredEvent(Pointer(device_id)))
+            Event::PointerEntered(PointerEnteredEvent(PointerId(device_id)))
         }
-        CursorLeft { device_id, .. } => Event::PointerLeft(PointerLeftEvent(Pointer(device_id))),
+        CursorLeft { device_id, .. } => Event::PointerLeft(PointerLeftEvent(PointerId(device_id))),
         MouseWheel { delta, .. } => Event::ScrollInput(delta.into()),
         MouseInput {
             device_id,
@@ -45,7 +45,7 @@ pub(crate) fn window_event(event: WindowEvent) -> Option<Event> {
             state,
             ..
         } => Event::PointerInput(PointerInputEvent {
-            id: Pointer(device_id),
+            id: PointerId(device_id),
             button: button.into(),
             is_down: state == ElementState::Pressed,
         }),

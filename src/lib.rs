@@ -27,6 +27,7 @@ mod window;
 
 pub mod event;
 
+pub use self::event::{Event, GamepadAxis, GamepadButton, GamepadId, Key, MouseButton, PointerId};
 pub use self::event_stream::EventStream;
 pub use self::run::run;
 pub use self::window::{CursorIcon, Settings, Window};
