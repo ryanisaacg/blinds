@@ -1,4 +1,4 @@
-use crate::Event;
+use crate::event::Event;
 
 use futures_util::future::poll_fn;
 use std::cell::RefCell;
