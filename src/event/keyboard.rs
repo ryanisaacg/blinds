@@ -21,6 +21,7 @@ impl KeyboardEvent {
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "enum-map", derive(enum_map::Enum))]
 /// A key location on a keyboard
 pub enum Key {
     Key1,

@@ -26,8 +26,12 @@ mod run;
 mod window;
 
 pub mod event;
+#[cfg(feature = "event-cache")]
+pub mod event_cache;
 
 pub use self::event::{Event, GamepadAxis, GamepadButton, GamepadId, Key, MouseButton, PointerId};
+#[cfg(feature = "event-cache")]
+pub use self::event_cache::{CachedEventStream, EventCache};
 pub use self::event_stream::EventStream;
 pub use self::run::run;
 pub use self::window::{CursorIcon, Settings, Window};
