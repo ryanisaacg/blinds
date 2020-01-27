@@ -10,7 +10,6 @@ use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
 use winit::window::{Fullscreen, Window as WinitWindow, WindowBuilder};
 
-
 /// The Window for your blinds application
 pub struct Window(pub(crate) Arc<WindowContents>);
 
@@ -335,7 +334,6 @@ impl Window {
         self.0.present();
     }
 }
-
 
 fn icon_to_winit(cursor: CursorIcon) -> winit::window::CursorIcon {
     use CursorIcon::*;
