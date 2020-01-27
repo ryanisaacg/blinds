@@ -4,11 +4,13 @@
 //! update your application's state accordingly, sometimes it is convenient or ergonomic to refer
 //! to the global state of the input devices. The [`EventCache`] and [`CachedEventStream`] are
 //! designed to make this easy and avoid some non-obvious pitfalls.
-use crate::{Event, EventStream, GamepadAxis, GamepadButton, GamepadId, Key, MouseButton, PointerId};
+use crate::{
+    Event, EventStream, GamepadAxis, GamepadButton, GamepadId, Key, MouseButton, PointerId,
+};
 
 use enum_map::EnumMap;
-use rustc_hash::FxHashMap;
 use mint::Vector2;
+use rustc_hash::FxHashMap;
 
 /// A wrapper around [`EventStream`] and [`EventCache`] for convenience
 ///
@@ -80,31 +82,43 @@ impl EventCache {
                 let pointer = *ev.pointer();
                 self.ensure_pointer_exists(pointer);
                 self.global_pointer.location = ev.location();
-                self.pointers.get_mut(&pointer).expect("Internal error: pointer failed to exist").location = ev.location();
+                self.pointers
+                    .get_mut(&pointer)
+                    .expect("Internal error: pointer failed to exist")
+                    .location = ev.location();
             }
             PointerInput(ev) => {
                 let pointer = *ev.pointer();
                 self.ensure_pointer_exists(pointer);
-                self.global_pointer.process_button(ev.button(), ev.is_down());
-                self.pointers.get_mut(&pointer).expect("Internal error: pointer failed to exist").process_button(ev.button(), ev.is_down());
+                self.global_pointer
+                    .process_button(ev.button(), ev.is_down());
+                self.pointers
+                    .get_mut(&pointer)
+                    .expect("Internal error: pointer failed to exist")
+                    .process_button(ev.button(), ev.is_down());
             }
             GamepadConnected(ev) => self.ensure_gamepad_exists(ev.gamepad().clone()),
             GamepadDisconnected(ev) => self.ensure_gamepad_exists(ev.gamepad().clone()),
             GamepadButton(ev) => {
                 let gamepad = ev.gamepad();
                 self.ensure_gamepad_exists(gamepad.clone());
-                self.gamepads.get_mut(gamepad).expect("Internal error: gamepad failed to exist").buttons[ev.button()] = ev.is_down();
+                self.gamepads
+                    .get_mut(gamepad)
+                    .expect("Internal error: gamepad failed to exist")
+                    .buttons[ev.button()] = ev.is_down();
             }
             GamepadAxis(ev) => {
                 let gamepad = ev.gamepad();
                 self.ensure_gamepad_exists(gamepad.clone());
-                self.gamepads.get_mut(gamepad).expect("Internal error: gamepad failed to exist").axes[ev.axis()] = ev.value();
-
+                self.gamepads
+                    .get_mut(gamepad)
+                    .expect("Internal error: gamepad failed to exist")
+                    .axes[ev.axis()] = ev.value();
             }
             FocusChanged(ev) if !ev.is_focused() => {
                 self.clear();
             }
-            _ => ()
+            _ => (),
         }
     }
 
@@ -151,7 +165,7 @@ impl EventCache {
     pub fn gamepad(&self, id: &GamepadId) -> Option<&GamepadState> {
         self.gamepads.get(id)
     }
-    
+
     /// The gamepad ID and values that have been tracked
     pub fn gamepads(&self) -> impl Iterator<Item = (&GamepadId, &GamepadState)> {
         self.gamepads.iter()
@@ -163,7 +177,7 @@ pub struct PointerState {
     right: bool,
     middle: bool,
     location: Vector2<f32>,
-    other: FxHashMap<u8, bool>
+    other: FxHashMap<u8, bool>,
 }
 
 impl PointerState {
@@ -212,10 +226,7 @@ impl Default for PointerState {
             left: false,
             right: false,
             middle: false,
-            location: Vector2 {
-                x: 0.0,
-                y: 0.0,
-            },
+            location: Vector2 { x: 0.0, y: 0.0 },
             other: FxHashMap::default(),
         }
     }
