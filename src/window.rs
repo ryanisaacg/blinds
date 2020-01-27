@@ -1,3 +1,4 @@
+use crate::{CursorIcon, Settings};
 #[cfg(feature = "gl")]
 use glow::Context;
 #[cfg(all(feature = "gl", not(target_arch = "wasm32")))]
@@ -9,53 +10,6 @@ use winit::event_loop::EventLoop;
 use winit::monitor::MonitorHandle;
 use winit::window::{Fullscreen, Window as WinitWindow, WindowBuilder};
 
-/// The various options to pass to the Window and/or GL context
-pub struct Settings {
-    /// The size of the window
-    pub size: Vector2<f32>,
-    /// If the cursor should be visible over the application, or if the cursor should be hidden
-    pub cursor_icon: Option<CursorIcon>,
-    /// If the application should be fullscreen
-    pub fullscreen: bool,
-    /// The icon on the window or the favicon on the tab
-    #[cfg(feature = "image")]
-    pub icon_path: Option<&'static str>,
-    /// How many samples to do for MSAA
-    ///
-    /// By default it is None; if it is Some, it should be a non-zero power of two
-    ///
-    /// Does nothing on web currently
-    pub multisampling: Option<u16>,
-    /// Enable or disable vertical sync
-    ///
-    /// Does nothing on web
-    pub vsync: bool,
-    /// If the window can be resized by the user
-    ///
-    /// Does nothing on web
-    pub resizable: bool,
-    /// The title of your application
-    pub title: &'static str,
-}
-
-impl Default for Settings {
-    fn default() -> Settings {
-        Settings {
-            size: Vector2 {
-                x: 1024.0,
-                y: 768.0,
-            },
-            cursor_icon: Some(CursorIcon::Default),
-            fullscreen: false,
-            #[cfg(feature = "image")]
-            icon_path: None,
-            multisampling: None,
-            vsync: true,
-            resizable: false,
-            title: "",
-        }
-    }
-}
 
 /// The Window for your blinds application
 pub struct Window(pub(crate) Arc<WindowContents>);
@@ -253,7 +207,7 @@ impl WindowContents {
         match icon {
             Some(icon) => {
                 self.window().set_cursor_visible(true);
-                self.window().set_cursor_icon(icon.into());
+                self.window().set_cursor_icon(icon_to_winit(icon));
             }
             None => {
                 self.window().set_cursor_visible(false);
@@ -382,84 +336,44 @@ impl Window {
     }
 }
 
-/// The options for the cursor icon
-pub enum CursorIcon {
-    Default,
-    Crosshair,
-    Hand,
-    Arrow,
-    Move,
-    Text,
-    Wait,
-    Help,
-    Progress,
-    NotAllowed,
-    ContextMenu,
-    Cell,
-    VerticalText,
-    Alias,
-    Copy,
-    NoDrop,
-    Grab,
-    Grabbing,
-    AllScroll,
-    ZoomIn,
-    ZoomOut,
-    EResize,
-    NResize,
-    NeResize,
-    NwResize,
-    SResize,
-    SeResize,
-    SwResize,
-    WResize,
-    EwResize,
-    NsResize,
-    NeswResize,
-    NwseResize,
-    ColResize,
-    RowResize,
-}
 
-impl Into<winit::window::CursorIcon> for CursorIcon {
-    fn into(self) -> winit::window::CursorIcon {
-        use CursorIcon::*;
-        match self {
-            Default => winit::window::CursorIcon::Default,
-            Crosshair => winit::window::CursorIcon::Crosshair,
-            Hand => winit::window::CursorIcon::Hand,
-            Arrow => winit::window::CursorIcon::Arrow,
-            Move => winit::window::CursorIcon::Move,
-            Text => winit::window::CursorIcon::Text,
-            Wait => winit::window::CursorIcon::Wait,
-            Help => winit::window::CursorIcon::Help,
-            Progress => winit::window::CursorIcon::Progress,
-            NotAllowed => winit::window::CursorIcon::NotAllowed,
-            ContextMenu => winit::window::CursorIcon::ContextMenu,
-            Cell => winit::window::CursorIcon::Cell,
-            VerticalText => winit::window::CursorIcon::VerticalText,
-            Alias => winit::window::CursorIcon::Alias,
-            Copy => winit::window::CursorIcon::Copy,
-            NoDrop => winit::window::CursorIcon::NoDrop,
-            Grab => winit::window::CursorIcon::Grab,
-            Grabbing => winit::window::CursorIcon::Grabbing,
-            AllScroll => winit::window::CursorIcon::AllScroll,
-            ZoomIn => winit::window::CursorIcon::ZoomIn,
-            ZoomOut => winit::window::CursorIcon::ZoomOut,
-            EResize => winit::window::CursorIcon::EResize,
-            NResize => winit::window::CursorIcon::NResize,
-            NeResize => winit::window::CursorIcon::NeResize,
-            NwResize => winit::window::CursorIcon::NwResize,
-            SResize => winit::window::CursorIcon::SResize,
-            SeResize => winit::window::CursorIcon::SeResize,
-            SwResize => winit::window::CursorIcon::SwResize,
-            WResize => winit::window::CursorIcon::WResize,
-            EwResize => winit::window::CursorIcon::EwResize,
-            NsResize => winit::window::CursorIcon::NsResize,
-            NeswResize => winit::window::CursorIcon::NeswResize,
-            NwseResize => winit::window::CursorIcon::NwseResize,
-            ColResize => winit::window::CursorIcon::ColResize,
-            RowResize => winit::window::CursorIcon::RowResize,
-        }
+fn icon_to_winit(cursor: CursorIcon) -> winit::window::CursorIcon {
+    use CursorIcon::*;
+    match cursor {
+        Default => winit::window::CursorIcon::Default,
+        Crosshair => winit::window::CursorIcon::Crosshair,
+        Hand => winit::window::CursorIcon::Hand,
+        Arrow => winit::window::CursorIcon::Arrow,
+        Move => winit::window::CursorIcon::Move,
+        Text => winit::window::CursorIcon::Text,
+        Wait => winit::window::CursorIcon::Wait,
+        Help => winit::window::CursorIcon::Help,
+        Progress => winit::window::CursorIcon::Progress,
+        NotAllowed => winit::window::CursorIcon::NotAllowed,
+        ContextMenu => winit::window::CursorIcon::ContextMenu,
+        Cell => winit::window::CursorIcon::Cell,
+        VerticalText => winit::window::CursorIcon::VerticalText,
+        Alias => winit::window::CursorIcon::Alias,
+        Copy => winit::window::CursorIcon::Copy,
+        NoDrop => winit::window::CursorIcon::NoDrop,
+        Grab => winit::window::CursorIcon::Grab,
+        Grabbing => winit::window::CursorIcon::Grabbing,
+        AllScroll => winit::window::CursorIcon::AllScroll,
+        ZoomIn => winit::window::CursorIcon::ZoomIn,
+        ZoomOut => winit::window::CursorIcon::ZoomOut,
+        EResize => winit::window::CursorIcon::EResize,
+        NResize => winit::window::CursorIcon::NResize,
+        NeResize => winit::window::CursorIcon::NeResize,
+        NwResize => winit::window::CursorIcon::NwResize,
+        SResize => winit::window::CursorIcon::SResize,
+        SeResize => winit::window::CursorIcon::SeResize,
+        SwResize => winit::window::CursorIcon::SwResize,
+        WResize => winit::window::CursorIcon::WResize,
+        EwResize => winit::window::CursorIcon::EwResize,
+        NsResize => winit::window::CursorIcon::NsResize,
+        NeswResize => winit::window::CursorIcon::NeswResize,
+        NwseResize => winit::window::CursorIcon::NwseResize,
+        ColResize => winit::window::CursorIcon::ColResize,
+        RowResize => winit::window::CursorIcon::RowResize,
     }
 }
