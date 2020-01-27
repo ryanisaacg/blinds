@@ -1,4 +1,4 @@
-use blinds::{run, Event, EventCache, EventStream, Key, Settings, Window};
+use blinds::{run, CachedEventStream, Event, EventStream, Key, Settings, Window};
 
 fn main() {
     run(Settings::default(), app);
