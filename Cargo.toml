@@ -40,3 +40,7 @@ winit = "0.20.0"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 glutin = { version = "0.22", optional = true }
+
+[[example]]
+name = "cache"
+required-features = ["event-cache"]
