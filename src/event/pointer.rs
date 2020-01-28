@@ -9,8 +9,8 @@ use winit::event::{DeviceId, MouseScrollDelta as MSD};
 pub struct PointerEnteredEvent(pub(crate) PointerId);
 
 impl PointerEnteredEvent {
-    pub fn pointer(&self) -> PointerId {
-        self.0
+    pub fn pointer(&self) -> &PointerId {
+        &self.0
     }
 }
 
@@ -21,8 +21,8 @@ impl PointerEnteredEvent {
 pub struct PointerLeftEvent(pub(crate) PointerId);
 
 impl PointerLeftEvent {
-    pub fn pointer(&self) -> PointerId {
-        self.0
+    pub fn pointer(&self) -> &PointerId {
+        &self.0
     }
 }
 
@@ -36,8 +36,8 @@ pub struct PointerMovedEvent {
 }
 
 impl PointerMovedEvent {
-    pub fn pointer(&self) -> PointerId {
-        self.id
+    pub fn pointer(&self) -> &PointerId {
+        &self.id
     }
 
     /// The logical location of the pointer, relative to the top-left of the window
@@ -57,8 +57,8 @@ pub struct PointerInputEvent {
 }
 
 impl PointerInputEvent {
-    pub fn pointer(&self) -> PointerId {
-        self.id
+    pub fn pointer(&self) -> &PointerId {
+        &self.id
     }
 
     pub fn button(&self) -> MouseButton {

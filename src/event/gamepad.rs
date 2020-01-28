@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 pub struct GamepadConnectedEvent(pub(crate) GamepadId);
 
 impl GamepadConnectedEvent {
-    pub fn id(&self) -> &GamepadId {
+    pub fn gamepad(&self) -> &GamepadId {
         &self.0
     }
 }
@@ -19,7 +19,7 @@ impl GamepadConnectedEvent {
 pub struct GamepadDisconnectedEvent(pub(crate) GamepadId);
 
 impl GamepadDisconnectedEvent {
-    pub fn id(&self) -> &GamepadId {
+    pub fn gamepad(&self) -> &GamepadId {
         &self.0
     }
 }
@@ -37,7 +37,7 @@ pub struct GamepadButtonEvent {
 
 impl GamepadButtonEvent {
     /// Which gamepad generated the event
-    pub fn id(&self) -> &GamepadId {
+    pub fn gamepad(&self) -> &GamepadId {
         &self.id
     }
 
@@ -68,7 +68,7 @@ pub struct GamepadAxisEvent {
 
 impl GamepadAxisEvent {
     /// Which gamepad generated the event
-    pub fn id(&self) -> &GamepadId {
+    pub fn gamepad(&self) -> &GamepadId {
         &self.id
     }
 
@@ -103,6 +103,7 @@ impl Ord for GamepadId {
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "enum-map", derive(enum_map::Enum))]
 /// A button on a standard (d-pad, 2-stick, 4-button, 4-trigger) gamepad
 pub enum GamepadButton {
     Start,
@@ -151,6 +152,7 @@ pub enum GamepadButton {
 }
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
+#[cfg_attr(feature = "enum-map", derive(enum_map::Enum))]
 /// The stick axes of a gamepad
 pub enum GamepadAxis {
     LeftStickX,
