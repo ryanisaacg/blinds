@@ -1,7 +1,7 @@
 [package]
 name = "blinds"
 description = "Wrap an abstraction over a window"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ryan Goldstein <ryan@ryanisaacg.com>"]
 categories = ["game-development", "web-programming"]
 keywords = ["async", "window"]
@@ -11,7 +11,7 @@ readme = "README.md"
 repository = "https://github.com/ryanisaacg/blinds"
 
 [package.metadata.docs.rs]
-all-features = true
+features = ["event-cache", "favicon", "gamepad"]
 
 [features]
 default = ["favicon", "gamepad"]
