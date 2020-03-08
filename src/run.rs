@@ -91,7 +91,7 @@ fn do_run(
                 if let winit::event::WindowEvent::Resized(size) = &event {
                     window.resize(*size);
                 }
-                if let Some(event) = window_event(event) {
+                if let Some(event) = window_event(event, &window) {
                     buffer.borrow_mut().push(event);
                 }
             }
