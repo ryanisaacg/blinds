@@ -91,14 +91,7 @@ fn do_run(
                 if let winit::event::WindowEvent::Resized(size) = &event {
                     window.resize(*size);
                 }
-                if let Some(mut event) = window_event(event) {
-                    if let Event::PointerMoved(e) = &mut event {
-                        let recip = 1.0 / window.scale();
-                        e.location = mint::Vector2 {
-                            x: e.location.x * recip,
-                            y: e.location.y * recip,
-                        };
-                    }
+                if let Some(event) = window_event(event, &window) {
                     buffer.borrow_mut().push(event);
                 }
             }

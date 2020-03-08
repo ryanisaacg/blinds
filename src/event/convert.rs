@@ -1,7 +1,8 @@
 use super::*;
+use crate::window::WindowContents;
 use winit::event::{DeviceEvent, ElementState, WindowEvent};
 
-pub(crate) fn window_event(event: WindowEvent) -> Option<Event> {
+pub(crate) fn window_event(event: WindowEvent, window: &WindowContents) -> Option<Event> {
     use WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ResizedEvent {
@@ -32,7 +33,7 @@ pub(crate) fn window_event(event: WindowEvent) -> Option<Event> {
             ..
         } => Event::PointerMoved(PointerMovedEvent {
             id: PointerId(device_id),
-            location: pp_to_vec(position),
+            location: pp_to_logical_vec(position, window.scale()),
         }),
         CursorEntered { device_id, .. } => {
             Event::PointerEntered(PointerEnteredEvent(PointerId(device_id)))
@@ -113,9 +114,9 @@ fn ps_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalSize<P>) -> Vector2<f
     }
 }
 
-fn pp_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>) -> Vector2<f32> {
+fn pp_to_logical_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>, scale: f32) -> Vector2<f32> {
     Vector2 {
-        x: ls.x.cast(),
-        y: ls.y.cast(),
+        x: ls.x.cast::<f32>() / scale,
+        y: ls.y.cast::<f32>() / scale,
     }
 }
