@@ -114,7 +114,10 @@ fn ps_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalSize<P>) -> Vector2<f
     }
 }
 
-fn pp_to_logical_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalPosition<P>, scale: f32) -> Vector2<f32> {
+fn pp_to_logical_vec<P: winit::dpi::Pixel>(
+    ls: winit::dpi::PhysicalPosition<P>,
+    scale: f32,
+) -> Vector2<f32> {
     Vector2 {
         x: ls.x.cast::<f32>() / scale,
         y: ls.y.cast::<f32>() / scale,
