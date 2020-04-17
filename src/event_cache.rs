@@ -152,7 +152,7 @@ impl EventCache {
     }
 
     /// The state of the given pointer
-    pub fn pointer(&self, id: &PointerId) -> Option<&PointerState> {
+    pub fn pointer(&self, id: PointerId) -> Option<&PointerState> {
         self.pointers.get(id)
     }
 
