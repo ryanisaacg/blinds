@@ -1,6 +1,22 @@
 name: Integration
-on: [push, pull_request]
+on:
+  pull_request:
+    paths:
+      - 'src/**.rs'
+      - 'Cargo.toml'
+      - '.github/workflows/integration.yml'
 jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: stable
+        components: rustfmt
+    - name: Check Formatting
+      run: cargo fmt --all -- --check
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -11,29 +27,49 @@ jobs:
     - uses: hecrj/setup-rust-action@v1.2.0
       with:
         rust-version: ${{ matrix.rust }}
-        components: clippy,rustfmt
-        targets: wasm32-unknown-unknown
-    - uses: actions/checkout@master
     - name: Install libudev
       if: matrix.os == 'ubuntu-latest'
       run: sudo apt update && sudo apt install libudev-dev
-    - name: Check formatting
-      run: cargo fmt -- --check
-    - name: Clippy desktop
+    - uses: actions/checkout@master
+    - name: Test
+      run: cargo test ${{ matrix.options }} --examples
+    - name: Test With Event Cache
+      run: cargo test ${{ matrix.options }} --examples --features event-cache
+    - name: Test With GL
+      run: cargo test ${{ matrix.options }} --examples --features gl
+
+  clippy:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        rust: [stable]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: hecrj/setup-rust-action@v1.2.0
+      with:
+        rust-version: ${{ matrix.rust }}
+        components: clippy
+    - name: Install libudev
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt update && sudo apt install libudev-dev
+    - uses: actions/checkout@master
+    - name: Clippy
       run: cargo clippy -- -D warnings
-    - name: Clippy desktop with GL enabled
-      run: cargo clippy --features gl -- -D warnings
+    - name: Clippy with features
+      run: cargo clippy --features gl,event-cache -- -D warnings
+
+  clippy-web:
+    runs-on: macOS-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1.2.0
+      with:
+        rust-version: ${{ matrix.rust }}
+        components: clippy
+        targets: wasm32-unknown-unknown
+    - uses: actions/checkout@master
     - name: Check stdweb
-      if: matrix.os == 'macOS-latest'
       run: cargo install cargo-web && cargo web check --features stdweb
-    - name: Check stdweb with GL enabled
-      if: matrix.os == 'macOS-latest'
-      run: cargo web check --features stdweb,gl
-    - name: Clippy web-sys
-      if: matrix.os == 'macOS-latest'
+    - name: Clippy
       run: cargo clippy --target wasm32-unknown-unknown --features web-sys -- -D warnings
-    - name: Clippy web-sys with GL enabled
-      if: matrix.os == 'macOS-latest'
-      run: cargo clippy --target wasm32-unknown-unknown --features web-sys,gl -- -D warnings
-    - name: Examples
-      run: cargo check --examples
+    - name: Clippy with features
+      run: cargo clippy --target wasm32-unknown-unknown --features web-sys,event-cache,gl -- -D warnings
