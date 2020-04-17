@@ -6,7 +6,7 @@ pub(crate) fn window_event(event: WindowEvent, window: &WindowContents) -> Optio
     use WindowEvent::*;
     Some(match event {
         Resized(ls) => Event::Resized(ResizedEvent {
-            size: ps_to_vec(ls),
+            size: ps_to_logical_vec(ls, window.scale()),
         }),
         ScaleFactorChanged { scale_factor, .. } => {
             Event::ScaleFactorChanged(ScaleFactorChangedEvent {
@@ -107,10 +107,13 @@ fn convert_modifiers(modifiers: winit::event::ModifiersState) -> ModifiersChange
     }
 }
 
-fn ps_to_vec<P: winit::dpi::Pixel>(ls: winit::dpi::PhysicalSize<P>) -> Vector2<f32> {
+fn ps_to_logical_vec<P: winit::dpi::Pixel>(
+    ls: winit::dpi::PhysicalSize<P>,
+    scale: f32,
+) -> Vector2<f32> {
     Vector2 {
-        x: ls.width.cast(),
-        y: ls.height.cast(),
+        x: ls.width.cast::<f32>() / scale,
+        y: ls.height.cast::<f32>() / scale,
     }
 }
 
