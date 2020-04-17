@@ -152,7 +152,7 @@ impl EventCache {
     }
 
     /// The state of the given pointer
-    #[allow(clippy::trivially-copy-pass-by-ref)]
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn pointer(&self, id: &PointerId) -> Option<&PointerState> {
         self.pointers.get(id)
     }
