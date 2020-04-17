@@ -1,6 +1,6 @@
 use super::*;
 use crate::window::WindowContents;
-use winit::event::{DeviceEvent, ElementState, WindowEvent};
+use winit::event::{ElementState, WindowEvent};
 
 pub(crate) fn window_event(event: WindowEvent, window: &WindowContents) -> Option<Event> {
     use WindowEvent::*;
@@ -50,14 +50,6 @@ pub(crate) fn window_event(event: WindowEvent, window: &WindowContents) -> Optio
             button: button.into(),
             is_down: state == ElementState::Pressed,
         }),
-        _ => return None,
-    })
-}
-
-pub(crate) fn device_event(event: DeviceEvent) -> Option<Event> {
-    use DeviceEvent::*;
-
-    Some(match event {
         ModifiersChanged(state) => Event::ModifiersChanged(convert_modifiers(state)),
         _ => return None,
     })

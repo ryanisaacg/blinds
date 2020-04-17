@@ -95,11 +95,6 @@ fn do_run(
                     buffer.borrow_mut().push(event);
                 }
             }
-            WinitEvent::DeviceEvent { event, .. } => {
-                if let Some(event) = device_event(event) {
-                    buffer.borrow_mut().push(event);
-                }
-            }
             WinitEvent::LoopDestroyed | WinitEvent::MainEventsCleared => {
                 buffer.borrow_mut().mark_ready();
                 #[cfg(feature = "gilrs")]
