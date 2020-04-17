@@ -27,6 +27,9 @@ jobs:
     - uses: hecrj/setup-rust-action@v1.2.0
       with:
         rust-version: ${{ matrix.rust }}
+    - name: Install libudev
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt update && sudo apt install libudev-dev
     - uses: actions/checkout@master
     - name: Test
       run: cargo test ${{ matrix.options }} --examples
@@ -46,6 +49,9 @@ jobs:
       with:
         rust-version: ${{ matrix.rust }}
         components: clippy
+    - name: Install libudev
+      if: matrix.os == 'ubuntu-latest'
+      run: sudo apt update && sudo apt install libudev-dev
     - uses: actions/checkout@master
     - name: Clippy
       run: cargo clippy -- -D warnings
