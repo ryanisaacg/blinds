@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.3
+- Fix a bug in ResizedEvent's `logical_size` calculation
+- Upgraded winit to version 0.22 (and glutin to 0.24)
+
 ## v0.1.2
 - Fix logical vs physical coordinates in mouse move events
 
