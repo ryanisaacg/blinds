@@ -1,6 +1,7 @@
 use mint::Vector2;
 
 /// The various options to pass to the Window and/or GL context
+#[derive(Clone, PartialEq)]
 pub struct Settings {
     /// The size of the window
     pub size: Vector2<f32>,
@@ -49,6 +50,7 @@ impl Default for Settings {
 }
 
 /// The options for the cursor icon
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum CursorIcon {
     Default,
     Crosshair,
@@ -85,4 +87,10 @@ pub enum CursorIcon {
     NwseResize,
     ColResize,
     RowResize,
+}
+
+impl Default for CursorIcon {
+    fn default() -> CursorIcon {
+        CursorIcon::Default
+    }
 }
