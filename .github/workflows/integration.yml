@@ -69,6 +69,6 @@ jobs:
     - name: Check stdweb
       run: cargo install cargo-web && cargo web check --features stdweb
     - name: Check
-      run: cargo check --target wasm32-unknown-unknown --features web-sys -- -D warnings
+      run: cargo check --target wasm32-unknown-unknown --features web-sys
     - name: Check with features
-      run: cargo check --target wasm32-unknown-unknown --features web-sys,event-cache,gl -- -D warnings
+      run: cargo check --target wasm32-unknown-unknown --features web-sys,event-cache,gl 
