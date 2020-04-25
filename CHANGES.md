@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.4
+- Add Clone, PartialEq derivations to Settings
+- Add Copy, Clone, PartialEq, Eq, Hash to CursorIcon
+
 ## v0.1.3
 - Fix a bug in ResizedEvent's `logical_size` calculation
 - Upgraded winit to version 0.22 (and glutin to 0.24)
