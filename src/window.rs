@@ -179,12 +179,16 @@ impl WindowContents {
                         alpha: false,
                         premultipliedAlpha: false,
                     });
-                ).into_reference().unwrap().try_into().unwrap()
+                )
+                .into_reference()
+                .unwrap()
+                .try_into()
+                .unwrap()
             };
             #[cfg(feature = "web-sys")]
             let ctx = {
-                use wasm_bindgen::{JsCast, JsValue};
                 use js_sys::{Map, Object};
+                use wasm_bindgen::{JsCast, JsValue};
                 use winit::platform::web::WindowExtWebSys;
                 let map = Map::new();
                 map.set(&JsValue::from_str("premultipliedAlpha"), &JsValue::FALSE);
