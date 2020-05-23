@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.5
+- Fix alpha-blending settings on the web
+
 ## v0.1.4
 - Add Clone, PartialEq derivations to Settings
 - Add Copy, Clone, PartialEq, Eq, Hash to CursorIcon
