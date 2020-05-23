@@ -168,24 +168,37 @@ impl WindowContents {
         let ctx = {
             #[cfg(feature = "stdweb")]
             let ctx = {
-                use webgl_stdweb::WebGLRenderingContext;
+                use std_web::js;
+                use std_web::unstable::TryInto;
+
                 use winit::platform::web::WindowExtStdweb;
 
-                window
-                    .window
-                    .canvas()
-                    .get_context::<WebGLRenderingContext>()
-                    .expect("Failed to acquire a WebGL rendering context")
+                let canvas = window.window.canvas();
+                js! (
+                    return @{canvas}.getContext("webgl", {
+                        alpha: false,
+                        premultipliedAlpha: false,
+                    });
+                )
+                .into_reference()
+                .unwrap()
+                .try_into()
+                .unwrap()
             };
             #[cfg(feature = "web-sys")]
             let ctx = {
-                use wasm_bindgen::JsCast;
+                use js_sys::{Map, Object};
+                use wasm_bindgen::{JsCast, JsValue};
                 use winit::platform::web::WindowExtWebSys;
+                let map = Map::new();
+                map.set(&JsValue::from_str("premultipliedAlpha"), &JsValue::FALSE);
+                map.set(&JsValue::from_str("alpha"), &JsValue::FALSE);
+                let props = Object::from_entries(&map).expect("TODO");
 
                 window
                     .window
                     .canvas()
-                    .get_context("webgl")
+                    .get_context_with_context_options("webgl", &props)
                     .expect("Failed to acquire a WebGL rendering context")
                     .expect("Failed to acquire a WebGL rendering context")
                     .dyn_into::<web_sys::WebGlRenderingContext>()
