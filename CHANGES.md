@@ -1,5 +1,8 @@
 # Changelog
 
+## v0.1.6
+- Automatically focus the canvas on window creation on web
+
 ## v0.1.5
 - Fix alpha-blending settings on the web
 
