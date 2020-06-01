@@ -20,11 +20,11 @@ pub struct Settings {
     pub multisampling: Option<u16>,
     /// Enable or disable vertical sync
     ///
-    /// Does nothing on web
+    /// Does nothing on web; defaults to true
     pub vsync: bool,
     /// If the window can be resized by the user
     ///
-    /// Does nothing on web
+    /// Does nothing on web; defaults to false
     pub resizable: bool,
     /// The title of your application
     pub title: &'static str,
