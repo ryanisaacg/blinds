@@ -117,7 +117,7 @@ impl WindowContents {
 
         window
     }
-  
+
     fn set_cursor_icon(&self, icon: Option<CursorIcon>) {
         match icon {
             Some(icon) => {
@@ -146,7 +146,7 @@ impl WindowContents {
         #[cfg(not(target_arch = "wasm32"))]
         self.window.resize(_size);
     }
-    
+
     pub(crate) fn scale(&self) -> f32 {
         self.window().scale_factor() as f32
     }
@@ -218,13 +218,13 @@ impl Window {
             self.0.window().current_monitor(),
         ));
     }
-    
+
     #[cfg(not(target_arch = "wasm32"))]
     /// Return the address of a given OpenGL function
     pub fn get_proc_address(&self, func: &str) -> *const core::ffi::c_void {
         self.0.window.get_proc_address(func)
     }
-        
+
     #[cfg(target_arch = "wasm32")]
     /// Create a WebGL context from the backing canvas
     pub fn webgl_context(&self) -> web_sys::WebGlRenderingContext {
@@ -236,7 +236,8 @@ impl Window {
         map.set(&JsValue::from_str("alpha"), &JsValue::FALSE);
         let props = Object::from_entries(&map).expect("Failed to create object");
 
-        self.0.window
+        self.0
+            .window
             .canvas()
             .get_context_with_context_options("webgl", &props)
             .expect("Failed to acquire a WebGL rendering context")
@@ -252,7 +253,10 @@ impl Window {
     /// no-op.
     pub fn present(&self) {
         #[cfg(not(target_arch = "wasm32"))]
-        self.0.window.swap_buffers().expect("Failed to swap buffers")
+        self.0
+            .window
+            .swap_buffers()
+            .expect("Failed to swap buffers")
     }
 }
 

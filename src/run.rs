@@ -11,7 +11,7 @@ use winit::event_loop::{ControlFlow, EventLoop};
 /// The entry point for a blinds-based application
 ///
 /// `run` acts as the executor for your async application, and it handles your event loop on both
-/// desktop and web. It is a single-threaded executor, because wasm doesn't support multithreading 
+/// desktop and web. It is a single-threaded executor, because wasm doesn't support multithreading
 /// at the moment.
 ///
 /// Currently blinds only supports one window, and `settings` determines how it will be
