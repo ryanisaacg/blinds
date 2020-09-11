@@ -38,8 +38,5 @@ pub use self::run::run;
 pub use self::settings::{CursorIcon, Settings};
 pub use self::window::Window;
 
-#[cfg(feature = "gl")]
-pub use self::run::run_gl;
-
 pub(crate) use self::event_stream::EventBuffer;
 pub(crate) use self::window::WindowContents;
