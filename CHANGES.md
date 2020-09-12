@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.0
+- Always enable gl, removing the need for the `gl` feature
+- Remove `run_gl` because all runs are now GL
+- Add `get_proc_address` for desktop GL, and `webgl_context` for web GL
+- Remove `glow` dependency; use the new context methods to construct glow contexts
+
 ## v0.1.6
 - Automatically focus the canvas on window creation on web
 
