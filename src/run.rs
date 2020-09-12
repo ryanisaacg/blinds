@@ -11,16 +11,11 @@ use winit::event_loop::{ControlFlow, EventLoop};
 /// The entry point for a blinds-based application
 ///
 /// `run` acts as the executor for your async application, and it handles your event loop on both
-/// desktop and web. It is a single-threaded executor, because wasm doesn't support thread at the
-/// moment.
+/// desktop and web. It is a single-threaded executor, because wasm doesn't support multithreading
+/// at the moment.
 ///
 /// Currently blinds only supports one window, and `settings` determines how it will be
 /// constructed.
-///
-/// If you want a GL context, use [`run_gl`] instead. GL contexts require additional work when
-/// creating a window, and therefore are not created by defualt.
-///
-/// [`run_gl`]: run_gl
 pub fn run<F, T>(settings: Settings, app: F) -> !
 where
     T: 'static + Future<Output = ()>,
@@ -34,35 +29,6 @@ where
     let pool = LocalPool::new();
     pool.spawner()
         .spawn_local(app(Window(window.clone()), stream))
-        .expect("Failed to start application");
-
-    do_run(event_loop, window, pool, buffer)
-}
-
-#[cfg(feature = "gl")]
-use glow::Context;
-
-#[cfg(feature = "gl")]
-/// The entry point for a blinds-based application using OpenGL
-///
-/// `run_gl` acts the same as [`run`] except it provides a [`glow`] context
-///
-/// [`run`]: run
-/// [`glow`]: glow
-pub fn run_gl<T, F>(settings: Settings, app: F) -> !
-where
-    T: 'static + Future<Output = ()>,
-    F: 'static + FnOnce(Window, Context, EventStream) -> T,
-{
-    let stream = EventStream::new();
-    let buffer = stream.buffer();
-
-    let event_loop = EventLoop::new();
-    let (window, ctx) = WindowContents::new_gl(&event_loop, settings);
-    let window = Arc::new(window);
-    let pool = LocalPool::new();
-    pool.spawner()
-        .spawn_local(app(Window(window.clone()), ctx, stream))
         .expect("Failed to start application");
 
     do_run(event_loop, window, pool, buffer)

@@ -32,22 +32,19 @@ jobs:
       run: sudo apt update && sudo apt install libudev-dev
     - uses: actions/checkout@master
     - name: Test
-      run: cargo test ${{ matrix.options }} --examples
+      run: cargo test --examples
     - name: Test With Event Cache
-      run: cargo test ${{ matrix.options }} --examples --features event-cache
-    - name: Test With GL
-      run: cargo test ${{ matrix.options }} --examples --features gl
+      run: cargo test --examples --all-features
 
   clippy:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
-        rust: [stable]
     runs-on: ${{ matrix.os }}
     steps:
     - uses: hecrj/setup-rust-action@v1.2.0
       with:
-        rust-version: ${{ matrix.rust }}
+        rust-version: stable
         components: clippy
     - name: Install libudev
       if: matrix.os == 'ubuntu-latest'
@@ -56,19 +53,17 @@ jobs:
     - name: Clippy
       run: cargo clippy -- -D warnings
     - name: Clippy with features
-      run: cargo clippy --features gl,event-cache -- -D warnings
+      run: cargo clippy --all-features -- -D warnings
 
   clippy-web:
     runs-on: macOS-latest
     steps:
     - uses: hecrj/setup-rust-action@v1.2.0
       with:
-        rust-version: ${{ matrix.rust }}
+        rust-version: stable
         targets: wasm32-unknown-unknown
     - uses: actions/checkout@master
-    - name: Check stdweb
-      run: cargo install cargo-web && cargo web check --features stdweb
-    - name: Check
-      run: cargo check --target wasm32-unknown-unknown --features web-sys
+    - name: Check web
+      run: cargo check --target wasm32-unknown-unknown
     - name: Check with features
-      run: cargo check --target wasm32-unknown-unknown --features web-sys,event-cache,gl 
+      run: cargo check --target wasm32-unknown-unknown --all-features
