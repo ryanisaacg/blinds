@@ -1,5 +1,5 @@
 use mint::Vector2;
-use winit::dpi::LogicalPosition;
+use winit::dpi::PhysicalPosition;
 use winit::event::{DeviceId, MouseScrollDelta as MSD};
 
 #[derive(Clone, Debug)]
@@ -81,7 +81,7 @@ pub enum MouseButton {
     Left,
     Middle,
     Right,
-    Other(u8),
+    Other(u16),
 }
 
 impl From<winit::event::MouseButton> for MouseButton {
@@ -108,7 +108,7 @@ impl From<MSD> for ScrollDelta {
     fn from(msd: MSD) -> Self {
         match msd {
             MSD::LineDelta(x, y) => Self::Lines(Vector2 { x, y }),
-            MSD::PixelDelta(LogicalPosition { x, y }) => Self::Pixels(Vector2 {
+            MSD::PixelDelta(PhysicalPosition { x, y }) => Self::Pixels(Vector2 {
                 x: x as f32,
                 y: y as f32,
             }),

@@ -18,7 +18,7 @@ pub(crate) struct WindowContents {
     window: WindowedContext<PossiblyCurrent>,
 }
 
-fn fullscreen_convert(fullscreen: bool, monitor: MonitorHandle) -> Option<Fullscreen> {
+fn fullscreen_convert(fullscreen: bool, monitor: Option<MonitorHandle>) -> Option<Fullscreen> {
     if fullscreen {
         Some(Fullscreen::Borderless(monitor))
     } else {
@@ -68,7 +68,7 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
     #[cfg(feature = "image")]
     let icon = settings.icon_path.map(|path| {
         let img = image::open(path).expect("Failed to load image");
-        let rgba = img.to_rgba();
+        let rgba = img.to_rgba8();
         let (width, height) = rgba.dimensions();
         let buffer = rgba.into_raw();
 
@@ -77,7 +77,7 @@ fn settings_to_wb(el: &EventLoop<()>, settings: &Settings) -> WindowBuilder {
     #[cfg(not(feature = "image"))]
     let icon = None;
 
-    let scale = el.primary_monitor().scale_factor();
+    let scale = el.primary_monitor().map_or(1.0, |m| m.scale_factor());
 
     WindowBuilder::new()
         .with_inner_size(PhysicalSize {
