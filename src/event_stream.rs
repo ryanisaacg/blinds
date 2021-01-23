@@ -42,7 +42,7 @@ impl EventStream {
     /// Future even if the events are ignored.
     ///
     /// [`Event`]: Event
-    pub fn next_event<'a>(&'a mut self) -> impl 'a + Future<Output = Option<Event>> {
+    pub fn next_event(&mut self) -> impl Future<Output = Option<Event>> + '_ {
         poll_fn(move |cx| {
             let mut buffer = self.buffer.borrow_mut();
             match buffer.events.pop_front() {
