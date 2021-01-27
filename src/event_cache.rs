@@ -178,7 +178,7 @@ pub struct PointerState {
     right: bool,
     middle: bool,
     location: Vector2<f32>,
-    other: FxHashMap<u8, bool>,
+    other: FxHashMap<u16, bool>,
 }
 
 impl PointerState {
@@ -194,7 +194,7 @@ impl PointerState {
         self.middle
     }
 
-    pub fn other(&self, button: u8) -> bool {
+    pub fn other(&self, button: u16) -> bool {
         self.other.get(&button).copied().unwrap_or(false)
     }
 
